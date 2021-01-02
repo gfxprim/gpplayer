@@ -1,0 +1,4 @@
+Music Player
+============
+
+A mp3 player written using libmpg123 and gfxprim widgets.

@@ -1,0 +1,70 @@
+{
+ "rows": 4,
+ "widgets": [
+  {
+   "rows": 3,
+   "widgets": [
+    {
+     "type": "label",
+     "size": 18,
+     "text": "Artist",
+     "uid": "artist",
+     "halign": "fill"
+    },
+    {
+     "type": "label",
+     "size": 18,
+     "text": "Album",
+     "uid": "album"
+    },
+    {
+     "type": "label",
+     "size": 18,
+     "text": "Track",
+     "uid": "track"
+    }
+   ]
+  },
+  {
+   "type": "pixmap",
+   "w": 100,
+   "h": 100,
+   "uid": "cover_art",
+   "on_event": "pixmap_event"
+  },
+  {
+   "type": "progressbar",
+   "halign": "fill",
+   "ptype": "seconds",
+   "inverse": true,
+   "uid": "playback"
+  },
+  {
+   "cols": 4,
+   "border": "none",
+   "halign": "fill",
+   "widgets": [
+    {
+     "type": "button",
+     "label": "Prev",
+     "on_event": "button_prev_event"
+    },
+    {
+     "type": "button",
+     "label": "Next",
+     "on_event": "button_next_event"
+    },
+    {
+     "type": "button",
+     "label": "Pause",
+     "on_event": "button_pause_event"
+    },
+    {
+     "type": "button",
+     "label": "Play",
+     "on_event": "button_play_event"
+    }
+   ]
+  }
+ ]
+}
