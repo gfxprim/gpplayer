@@ -10,6 +10,7 @@
 #include <filters/gp_resize.h>
 #include <widgets/gp_widgets.h>
 
+#include "playlist.h"
 #include "audio_output.h"
 
 static void *uids;
@@ -66,9 +67,6 @@ static enum audio_format convert_fmt(int encoding)
 }
 
 struct player_tracks {
-	unsigned int tracks;
-	unsigned int cur_track;
-	const char **paths;
 	struct audio_output *out;
 	mpg123_handle *mh;
 	long rate;
@@ -83,6 +81,7 @@ struct info_widgets {
 	gp_widget *track;
 	gp_widget *playback;
 	gp_widget *cover_art;
+	gp_widget *playlist;
 } info_widgets;
 
 static void set_info(const char *artist, const char *album, const char *track)
@@ -201,11 +200,12 @@ int button_next_event(gp_widget_event *ev)
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)
 		return 0;
 
-	tracks.cur_track = (tracks.cur_track + 1) % tracks.tracks;
+	if (!playlist_next())
+		return 0;
 
-	load_track(tracks.out, tracks.mh, tracks.paths[tracks.cur_track]);
+	load_track(tracks.out, tracks.mh, playlist_cur());
 
-	return 1;
+	return 0;
 }
 
 static gp_pixmap *alloc_backing_pixmap(gp_widget_event *ev)
@@ -239,11 +239,10 @@ int button_prev_event(gp_widget_event *ev)
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)
 		return 0;
 
-	tracks.cur_track = tracks.cur_track > 0 ?
-	                   tracks.cur_track - 1 :
-			   tracks.tracks - 1;
+	if (!playlist_prev())
+		return 0;
 
-	load_track(tracks.out, tracks.mh, tracks.paths[tracks.cur_track]);
+	load_track(tracks.out, tracks.mh, playlist_cur());
 
 	return 1;
 }
@@ -276,6 +275,61 @@ int button_pause_event(gp_widget_event *ev)
 	return 1;
 }
 
+int playlist_event(gp_widget_event *ev)
+{
+	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+		return 0;
+
+	if (!playlist_set(ev->self->tbl->selected_row))
+		return 0;
+
+	load_track(tracks.out, tracks.mh, playlist_cur());
+	return 0;
+}
+
+int button_playlist_rem(gp_widget_event *ev)
+{
+	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+		return 0;
+
+	if (!info_widgets.playlist->tbl->row_selected)
+		return 0;
+
+	playlist_rem(info_widgets.playlist->tbl->selected_row, 1);
+	gp_widget_table_refresh(info_widgets.playlist);
+	return 0;
+}
+
+int button_playlist_move_up(gp_widget_event *ev)
+{
+	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+		return 0;
+
+	if (!info_widgets.playlist->tbl->row_selected)
+		return 0;
+
+	if (playlist_move_up(info_widgets.playlist->tbl->selected_row))
+		info_widgets.playlist->tbl->selected_row--;
+
+	gp_widget_table_refresh(info_widgets.playlist);
+	return 0;
+}
+
+int button_playlist_move_down(gp_widget_event *ev)
+{
+	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+		return 0;
+
+	if (!info_widgets.playlist->tbl->row_selected)
+		return 0;
+
+	if (playlist_move_down(info_widgets.playlist->tbl->selected_row))
+		info_widgets.playlist->tbl->selected_row++;
+
+	gp_widget_table_refresh(info_widgets.playlist);
+	return 0;
+}
+
 /*
 static void seek_callback(struct MW_Widget *self)
 {
@@ -291,6 +345,7 @@ int main(int argc, char *argv[])
 {
 	struct audio_output *out;
 	mpg123_handle *mh;
+	int i;
 
 	gp_widget *layout = gp_widget_layout_json("gpplayer.json", &uids);
 
@@ -299,6 +354,7 @@ int main(int argc, char *argv[])
 	info_widgets.track = gp_widget_by_uid(uids, "track", GP_WIDGET_LABEL);
 	info_widgets.playback = gp_widget_by_uid(uids, "playback", GP_WIDGET_PROGRESSBAR);
 	info_widgets.cover_art = gp_widget_by_uid(uids, "cover_art", GP_WIDGET_PIXMAP);
+	info_widgets.playlist = gp_widget_by_uid(uids, "playlist", GP_WIDGET_TABLE);
 
 	gp_widget_event_unmask(info_widgets.cover_art, GP_WIDGET_EVENT_RESIZE);
 
@@ -316,15 +372,20 @@ int main(int argc, char *argv[])
 
 	gp_widgets_getopt(&argc, &argv);
 
-	tracks.tracks    = argc;
-	tracks.cur_track = 0;
-	tracks.paths     = (const char**)argv;
-	tracks.out       = out;
-	tracks.mh        = mh;
-	tracks.playing   = 1;
+	playlist_init();
 
-	if (argc)
-		load_track(out, mh, argv[0]);
+	for (i = 0; i < argc; i++)
+		playlist_add(argv[i]);
+
+	playlist_list();
+
+	tracks.out     = out;
+	tracks.mh      = mh;
+
+	if (playlist_cur()) {
+		tracks.playing = 1;
+		load_track(out, mh, playlist_cur());
+	}
 
 	gp_widgets_layout_init(layout, "gpplayer");
 
@@ -342,17 +403,13 @@ int main(int argc, char *argv[])
 
 			gp_widget_pbar_set(info_widgets.playback, pos);
 
-			// we are done, play next track
+			/* we are done, play next track */
 			if (ret == MPG123_DONE) {
-				tracks.cur_track++;
-
-				// album finished
-				if (tracks.cur_track >= tracks.tracks) {
-					tracks.cur_track--;
+				if (playlist_next()) {
+					load_track(out, mh, playlist_cur());
+				} else {
 					tracks.playing = 0;
 					audio_output_stop(out);
-				} else {
-					load_track(out, mh, tracks.paths[tracks.cur_track]);
 				}
 
 				continue;

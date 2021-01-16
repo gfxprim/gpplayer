@@ -1,6 +1,6 @@
 {
  "version": 1,
- "rows": 4,
+ "rows": 5,
  "widgets": [
   {
    "rows": 3,
@@ -72,6 +72,61 @@
      "btype": "last",
      "halign": "fill",
      "on_event": "button_next_event"
+    }
+   ]
+  },
+  {
+   "rows": 2,
+   "border": "none",
+   "halign": "fill",
+   "widgets": [
+    {
+     "halign": "fill",
+     "type": "table",
+     "min_rows": 5,
+     "get_elem": "playlist_get",
+     "set_row": "playlist_set_row",
+     "on_event": "playlist_event",
+     "uid": "playlist",
+     "header": [
+      {
+       "label": "Playlist",
+       "min_size": 20,
+       "fill": 1
+      }
+     ]
+    },
+    {
+     "cols": 4,
+     "border": "none",
+     "halign": "fill",
+     "uniform": "true",
+     "widgets": [
+      {
+       "type": "button",
+       "btype": "up",
+       "halign": "fill",
+       "on_event": "button_playlist_move_up"
+      },
+      {
+       "type": "button",
+       "btype": "down",
+       "halign": "fill",
+       "on_event": "button_playlist_move_down"
+      },
+      {
+       "type": "button",
+       "btype": "add",
+       "halign": "fill",
+       "on_event": "button_playlist_add"
+      },
+      {
+       "type": "button",
+       "btype": "rem",
+       "halign": "fill",
+       "on_event": "button_playlist_rem"
+      }
+     ]
     }
    ]
   }
