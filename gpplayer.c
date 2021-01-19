@@ -432,7 +432,10 @@ int main(int argc, char *argv[])
 
 	gp_widgets_getopt(&argc, &argv);
 
-	playlist_init();
+	if (argc)
+		playlist_init(NULL);
+	else
+		playlist_init("gpapps/gpplayer/playlist.txt");
 
 	for (i = 0; i < argc; i++)
 		playlist_add(argv[i]);

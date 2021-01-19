@@ -15,7 +15,14 @@ struct playlist {
 	char **files;
 };
 
-void playlist_init(void);
+/*
+ * @brief Inialize playlist strucutres.
+ *
+ * @path If non-NULL playlist is loaded from the file.
+ */
+void playlist_init(const char *path);
+
+void playlist_exit(void);
 
 int playlist_next(void);
 
@@ -34,5 +41,9 @@ void playlist_add(const char *path);
 void playlist_rem(size_t off, size_t len);
 
 void playlist_list(void);
+
+void playlist_save(const char *fname);
+
+void playlist_load(const char *fname);
 
 #endif /* PLAYLIST_H__ */

@@ -17,12 +17,171 @@
 
 struct playlist self;
 
-void playlist_init(void)
+const char *save_path;
+
+void playlist_init(const char *path)
 {
 	self.cur = 0;
 	self.loop = 0;
 	self.shuffle = 0;
 	self.files = gp_vec_new(0, sizeof(char *));
+
+	if (path) {
+		save_path = strdup(path);
+		playlist_load(path);
+	}
+}
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+
+int creat_cfg_file(const char *path, mode_t dir_mode, mode_t file_mode)
+{
+	char *full_path, *del;
+	int fd;
+
+	if (!access(path, W_OK))
+		return open(path, O_WRONLY);
+
+	char *home_path = getenv("HOME");
+
+	if (!home_path) {
+		errno = ENOENT;
+		return -1;
+	}
+
+	asprintf(&full_path, "%s/.config/%s", home_path, strdup(path));
+	if (!full_path) {
+		errno = ENOMEM;
+		return -1;
+	}
+
+	del = full_path;
+
+	for (;;) {
+		del = strchr(del+1, '/');
+		if (!del)
+			break;
+
+		*del = 0;
+		printf("MKDIR '%s'\n", full_path);
+		if (mkdir(full_path, dir_mode)) {
+			if (errno != EEXIST)
+				return -1;
+		}
+		*del = '/';
+	}
+
+	fd = creat(full_path, file_mode);
+	free(full_path);
+	return fd;
+}
+
+int open_cfg_file(const char *path)
+{
+	char *home_path, *full_path = NULL;
+	int fd;
+
+	home_path = getenv("HOME");
+	if (!home_path) {
+		errno = ENOENT;
+		return -1;
+	}
+
+	asprintf(&full_path, "%s/.config/%s", home_path, strdup(path));
+	if (!full_path) {
+		errno = ENOMEM;
+		return -1;
+	}
+
+	fd = open(full_path, O_RDONLY);
+	free(full_path);
+	return fd;
+}
+
+void playlist_exit(void)
+{
+	if (!save_path)
+		return;
+
+	playlist_save(save_path);
+}
+
+static void add_path(const char *path, const char *fname)
+{
+	void *new;
+	size_t len = gp_vec_len(self.files);
+	const char *cwd = getenv("PWD");
+
+	new = gp_vec_append(self.files, 1);
+	if (!new)
+		return;
+
+	self.files = new;
+
+	if (path) {
+		if (path[0] == '/') {
+			if (asprintf(&self.files[len], "%s/%s", path, fname) < 0)
+				self.files[len] = NULL;
+		} else {
+			if (asprintf(&self.files[len], "%s/%s/%s", cwd, path, fname) < 0)
+				self.files[len] = NULL;
+		}
+	} else {
+		if (fname[0] == '/') {
+			self.files[len] = strdup(fname);
+		} else {
+			if (asprintf(&self.files[len], "%s/%s", cwd, fname) < 0)
+				self.files[len] = NULL;
+		}
+	}
+
+	if (!self.files[len])
+		self.files = gp_vec_remove(self.files, 1);
+}
+
+void playlist_load(const char *path)
+{
+	int fd = open_cfg_file(path);
+	char buf[4096];
+
+	if (fd < 0)
+		return;
+
+	FILE *f = fdopen(fd, "r");
+
+	if (!f)
+		return;
+
+	while (fgets(buf, sizeof(buf), f)) {
+		size_t len = strlen(buf);
+		if (buf[len-1] == '\n')
+			buf[len-1] = 0;
+		if (!buf[0])
+			continue;
+		add_path(NULL, buf);
+	}
+
+	fclose(f);
+}
+
+void playlist_save(const char *path)
+{
+	int fd;
+	size_t i;
+
+	fd = creat_cfg_file(path, 0755, 0644);
+	if (fd < 0)
+		return;
+
+	for (i = 0; i < gp_vec_len(self.files); i++) {
+		write(fd, self.files[i], strlen(self.files[i]));
+		write(fd, "\n", 1);
+	}
+
+	close(fd);
 }
 
 int playlist_next(void)
@@ -105,28 +264,6 @@ const char *playlist_cur(void)
 		return NULL;
 
 	return self.files[self.cur];
-}
-
-static void add_path(const char *path, const char *fname)
-{
-	void *new;
-	size_t len = gp_vec_len(self.files);
-
-	new = gp_vec_append(self.files, 1);
-	if (!new)
-		return;
-
-	self.files = new;
-
-	if (path) {
-		if (asprintf(&self.files[len], "%s/%s", path, fname) < 0)
-			self.files[len] = NULL;
-	} else {
-		self.files[len] = strdup(fname);
-	}
-
-	if (!self.files[len])
-		self.files = gp_vec_remove(self.files, 1);
 }
 
 void playlist_add(const char *path)
