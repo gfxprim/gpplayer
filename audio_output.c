@@ -140,6 +140,17 @@ int audio_output_setup(struct audio_output *self,
 	return 0;
 }
 
+unsigned int audio_buf_avail(struct audio_output *self)
+{
+	snd_pcm_sframes_t avail = snd_pcm_avail(self->playback_handle);
+
+	//TODO: Handle error codes accordingly
+	if (avail < 0)
+		return 256;
+
+	return AUDIO_SAMPLES_TO_BUFSIZE(self, avail);
+}
+
 void audio_output_destroy(struct audio_output *self)
 {
 	GP_DEBUG(1, "Destroing ALSA output");

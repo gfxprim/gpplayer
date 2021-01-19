@@ -195,6 +195,43 @@ int load_track(struct audio_output *out, mpg123_handle *mh, const char *name)
 	return 0;
 }
 
+static uint32_t playback_callback(gp_timer *self)
+{
+	size_t size;
+	int avail = audio_buf_avail(tracks.out);
+	unsigned char buf[avail];
+	int ret;
+
+	if (avail < 256)
+		return 10;
+
+	ret = mpg123_read(tracks.mh, buf, sizeof(buf), &size);
+
+	uint32_t pos = (double)mpg123_tell(tracks.mh) / tracks.out->sample_rate + 0.5;
+
+	gp_widget_pbar_set(info_widgets.playback, pos);
+
+	/* we are done, play next track */
+	if (ret == MPG123_DONE) {
+		if (playlist_next()) {
+			load_track(tracks.out, tracks.mh, playlist_cur());
+		} else {
+			tracks.playing = 0;
+			audio_output_stop(tracks.out);
+		}
+	}
+
+	audio_output_write(tracks.out, buf, AUDIO_BUFSIZE_TO_SAMPLES(tracks.out, size));
+	return 10;
+}
+
+static gp_timer playback_timer = {
+	.expires = 10,
+	.period = 10,
+	.callback = playback_callback,
+	.id = "Playback",
+};
+
 int button_next_event(gp_widget_event *ev)
 {
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)
@@ -257,6 +294,7 @@ int button_play_event(gp_widget_event *ev)
 
 	tracks.playing = 1;
 	audio_output_start(tracks.out);
+	gp_widgets_timer_ins(&playback_timer);
 
 	return 1;
 }
@@ -271,6 +309,7 @@ int button_pause_event(gp_widget_event *ev)
 
 	tracks.playing = 0;
 	audio_output_stop(tracks.out);
+	gp_widgets_timer_rem(&playback_timer);
 
 	return 1;
 }
@@ -284,6 +323,12 @@ int playlist_event(gp_widget_event *ev)
 		return 0;
 
 	load_track(tracks.out, tracks.mh, playlist_cur());
+	if (!tracks.playing) {
+		tracks.playing = 1;
+		audio_output_start(tracks.out);
+		gp_widgets_timer_ins(&playback_timer);
+	}
+
 	return 0;
 }
 
@@ -297,6 +342,21 @@ int button_playlist_rem(gp_widget_event *ev)
 
 	playlist_rem(info_widgets.playlist->tbl->selected_row, 1);
 	gp_widget_table_refresh(info_widgets.playlist);
+	return 0;
+}
+
+int button_playlist_add(gp_widget_event *ev)
+{
+	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+		return 0;
+
+	gp_widget_dialog *dialog = gp_widget_dialog_file_open_new(NULL);
+
+	if (gp_widget_dialog_run(dialog) == GP_WIDGET_DIALOG_PATH)
+		playlist_add(gp_widget_dialog_file_open_path(dialog));
+
+	gp_widget_dialog_free(dialog);
+
 	return 0;
 }
 
@@ -379,52 +439,17 @@ int main(int argc, char *argv[])
 
 	playlist_list();
 
-	tracks.out     = out;
-	tracks.mh      = mh;
+	tracks.out = out;
+	tracks.mh = mh;
 
 	if (playlist_cur()) {
 		tracks.playing = 1;
 		load_track(out, mh, playlist_cur());
 	}
 
-	gp_widgets_layout_init(layout, "gpplayer");
-
 	audio_output_start(out);
-
-	for (;;) {
-		size_t size;
-		unsigned char buf[128];
-		int ret;
-
-		if (tracks.playing) {
-			ret = mpg123_read(mh, buf, sizeof(buf), &size);
-
-			uint32_t pos = (double)mpg123_tell(mh) / out->sample_rate + 0.5;
-
-			gp_widget_pbar_set(info_widgets.playback, pos);
-
-			/* we are done, play next track */
-			if (ret == MPG123_DONE) {
-				if (playlist_next()) {
-					load_track(out, mh, playlist_cur());
-				} else {
-					tracks.playing = 0;
-					audio_output_stop(out);
-				}
-
-				continue;
-			}
-
-			audio_output_write(out, buf, MW_ALSA_BUF_SIZE_TO_SAMPLES(out, size));
-		} else {
-			usleep(100000);
-		}
-
-		if (gp_widgets_process_events(layout))
-			exit(0);
-
-		gp_widgets_redraw(layout);
-	}
+	gp_widgets_timer_ins(&playback_timer);
+	gp_widgets_main_loop(layout, "gpplayer", NULL, 0, NULL);
 
 	return 0;
 }

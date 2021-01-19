@@ -28,8 +28,11 @@ struct audio_output {
 	unsigned int sample_rate;
 };
 
-#define MW_ALSA_BUF_SIZE_TO_SAMPLES(alsa_out, buf_size) \
+#define AUDIO_BUFSIZE_TO_SAMPLES(alsa_out, buf_size) \
 	(buf_size/((alsa_out)->channels * audio_format_size((alsa_out)->fmt)))
+
+#define AUDIO_SAMPLES_TO_BUFSIZE(alsa_out, samples) \
+	((alsa_out)->channels * audio_format_size((alsa_out)->fmt) * (samples))
 
 struct audio_output *audio_output_create(const char *alsa_device,
                                          uint8_t channels,
@@ -46,6 +49,8 @@ int audio_output_setup(struct audio_output *self,
                        unsigned int sample_rate);
 
 unsigned int audio_format_size(enum audio_format fmt);
+
+unsigned int audio_buf_avail(struct audio_output *self);
 
 void audio_output_destroy(struct audio_output *self);
 
