@@ -15,7 +15,7 @@
 
 static void *uids;
 
-mpg123_handle *init_mpg123(void)
+static mpg123_handle *init_mpg123(void)
 {
 	mpg123_pars *mp;
 	mpg123_handle *mh;
@@ -73,7 +73,7 @@ struct player_tracks {
 	int playing;
 };
 
-struct player_tracks tracks;
+static struct player_tracks tracks;
 
 struct info_widgets {
 	gp_widget *album;
@@ -201,9 +201,18 @@ static uint32_t playback_callback(gp_timer *self)
 	int avail = audio_buf_avail(tracks.out);
 	unsigned char buf[avail];
 	int ret;
+	static unsigned int tick_ms = 1;
 
-	if (avail < 256)
-		return 10;
+	if (avail < 1024) {
+		tick_ms = GP_MIN(100u, tick_ms * 2);
+		GP_DEBUG(1, "Autotune timer tick to %u (avail=%i)", tick_ms, avail);
+		return tick_ms;
+	}
+
+	if (avail > 8196) {
+		tick_ms = GP_MAX(1u, tick_ms/2);
+		GP_DEBUG(1, "Autotune timer tick to %u (avail=%i)", tick_ms, avail);
+	}
 
 	ret = mpg123_read(tracks.mh, buf, sizeof(buf), &size);
 
@@ -218,19 +227,27 @@ static uint32_t playback_callback(gp_timer *self)
 		} else {
 			tracks.playing = 0;
 			audio_output_stop(tracks.out);
+			return 0;
 		}
 	}
 
 	audio_output_write(tracks.out, buf, AUDIO_BUFSIZE_TO_SAMPLES(tracks.out, size));
-	return 10;
+	return tick_ms;
 }
 
 static gp_timer playback_timer = {
-	.expires = 10,
-	.period = 10,
+	.expires = 0,
 	.callback = playback_callback,
 	.id = "Playback",
 };
+
+static void start_playback_timer(void)
+{
+	tracks.playing = 1;
+	audio_output_start(tracks.out);
+	playback_timer.expires = 0;
+	gp_widgets_timer_ins(&playback_timer);
+}
 
 int button_next_event(gp_widget_event *ev)
 {
@@ -292,9 +309,7 @@ int button_play_event(gp_widget_event *ev)
 	if (tracks.playing == 1)
 		return 1;
 
-	tracks.playing = 1;
-	audio_output_start(tracks.out);
-	gp_widgets_timer_ins(&playback_timer);
+	start_playback_timer();
 
 	return 1;
 }
@@ -308,8 +323,8 @@ int button_pause_event(gp_widget_event *ev)
 		return 1;
 
 	tracks.playing = 0;
-	audio_output_stop(tracks.out);
 	gp_widgets_timer_rem(&playback_timer);
+	audio_output_stop(tracks.out);
 
 	return 1;
 }
@@ -323,11 +338,8 @@ int playlist_event(gp_widget_event *ev)
 		return 0;
 
 	load_track(tracks.out, tracks.mh, playlist_cur());
-	if (!tracks.playing) {
-		tracks.playing = 1;
-		audio_output_start(tracks.out);
-		gp_widgets_timer_ins(&playback_timer);
-	}
+	if (!tracks.playing)
+		start_playback_timer();
 
 	return 0;
 }
@@ -448,10 +460,10 @@ int main(int argc, char *argv[])
 	if (playlist_cur()) {
 		tracks.playing = 1;
 		load_track(out, mh, playlist_cur());
+		audio_output_start(out);
+		gp_widgets_timer_ins(&playback_timer);
 	}
 
-	audio_output_start(out);
-	gp_widgets_timer_ins(&playback_timer);
 	gp_widgets_main_loop(layout, "gpplayer", NULL, 0, NULL);
 
 	return 0;

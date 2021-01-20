@@ -94,14 +94,38 @@ struct audio_output *audio_output_create(const char *alsa_device,
 
 int audio_output_start(struct audio_output *self)
 {
+	int ret;
+
 	GP_DEBUG(1, "Starting alsa output");
-	return snd_pcm_start(self->playback_handle);
+
+	ret = snd_pcm_set_params(self->playback_handle, convert_fmt(self->fmt),
+	                         SND_PCM_ACCESS_RW_INTERLEAVED,
+				 self->channels, self->sample_rate, 1, 500000);
+	if (ret < 0) {
+		GP_WARN("snd_pcm_hw_params(): %s", snd_strerror(ret));
+		return ret;
+	}
+
+	ret = snd_pcm_start(self->playback_handle);
+
+	if (ret < 0)
+		GP_WARN("snd_pcm_start(): %s", snd_strerror(ret));
+
+	return ret;
 }
 
 int audio_output_stop(struct audio_output *self)
 {
+	int ret;
+
 	GP_DEBUG(1, "Stopping alsa output");
-	return snd_pcm_drop(self->playback_handle);
+
+	ret = snd_pcm_drop(self->playback_handle);
+
+	if (ret < 0)
+		GP_WARN("snd_pcm_drop(): %s", snd_strerror(ret));
+
+	return ret;
 }
 
 int audio_output_setup(struct audio_output *self,
@@ -121,6 +145,18 @@ int audio_output_setup(struct audio_output *self,
 	    self->sample_rate == sample_rate &&
 	    self->channels == channels) {
 		return 0;
+	}
+
+	unsigned int rate = sample_rate;
+
+	snd_pcm_hw_params_set_format(handle, self->hw_params, convert_fmt(fmt));
+	snd_pcm_hw_params_set_rate_near(handle, self->hw_params, &rate, 0);
+	snd_pcm_hw_params_set_channels(handle, self->hw_params, channels);
+
+	ret = snd_pcm_hw_params(handle, self->hw_params);
+	if (ret) {
+		GP_WARN("snd_pcm_hw_params(handle, hw_params): %s",
+			snd_strerror(ret));
 	}
 
 	ret = snd_pcm_set_params(handle, convert_fmt(fmt),
@@ -144,9 +180,11 @@ unsigned int audio_buf_avail(struct audio_output *self)
 {
 	snd_pcm_sframes_t avail = snd_pcm_avail(self->playback_handle);
 
-	//TODO: Handle error codes accordingly
-	if (avail < 0)
+	if (avail < 0) {
+		GP_WARN("snd_pcm_avail(): %s", snd_strerror(avail));
+		snd_pcm_prepare(self->playback_handle);
 		return 256;
+	}
 
 	return AUDIO_SAMPLES_TO_BUFSIZE(self, avail);
 }
