@@ -90,7 +90,7 @@ int open_cfg_file(const char *path)
 		return -1;
 	}
 
-	asprintf(&full_path, "%s/.config/%s", home_path, strdup(path));
+	asprintf(&full_path, "%s/.config/%s", home_path, path);
 	if (!full_path) {
 		errno = ENOMEM;
 		return -1;
@@ -266,6 +266,11 @@ const char *playlist_cur(void)
 	return self.files[self.cur];
 }
 
+static int cmp(const void *a, const void *b)
+{
+	return strcmp(*(const char **)a, *(const char **)b);
+}
+
 void playlist_add(const char *path)
 {
 	struct stat path_stat;
@@ -283,6 +288,8 @@ void playlist_add(const char *path)
 	if (!dir)
 		return;
 
+	size_t first = gp_vec_len(self.files);
+
 	while ((ent = readdir(dir))) {
 		if (!(ent->d_type & DT_REG))
 			continue;
@@ -292,11 +299,15 @@ void playlist_add(const char *path)
 		if (name_len < 4)
 			continue;
 
-		if (!strcmp(ent->d_name + name_len - 3, ".mp3"))
+		if (strcmp(ent->d_name + name_len - 4, ".mp3"))
 			continue;
 
 		add_path(path, ent->d_name);
 	}
+
+	size_t last = gp_vec_len(self.files);
+
+	qsort(&self.files[first], last-first, sizeof(char*), cmp);
 
 	closedir(dir);
 }
