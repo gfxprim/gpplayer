@@ -1,37 +1,44 @@
 {
  "version": 1,
- "rows": 5,
+ "rows": 4,
  "widgets": [
   {
-   "rows": 3,
+   "cols": 2,
+   "border": "none",
    "widgets": [
     {
-     "type": "label",
-     "size": 18,
-     "text": "Artist",
-     "uid": "artist",
-     "halign": "fill"
+     "type": "pixmap",
+     "w": 100,
+     "h": 100,
+     "uid": "cover_art",
+     "on_event": "pixmap_event"
     },
     {
-     "type": "label",
-     "size": 18,
-     "text": "Album",
-     "uid": "album"
-    },
-    {
-     "type": "label",
-     "size": 18,
-     "text": "Track",
-     "uid": "track"
+     "rows": 3,
+     "border": "none",
+     "widgets": [
+      {
+       "type": "label",
+       "size": 18,
+       "text": "Artist",
+       "uid": "artist",
+       "halign": "fill"
+      },
+      {
+       "type": "label",
+       "size": 18,
+       "text": "Album",
+       "uid": "album"
+      },
+      {
+       "type": "label",
+       "size": 18,
+       "text": "Track",
+       "uid": "track"
+      }
+     ]
     }
    ]
-  },
-  {
-   "type": "pixmap",
-   "w": 100,
-   "h": 100,
-   "uid": "cover_art",
-   "on_event": "pixmap_event"
   },
   {
    "type": "progressbar",
