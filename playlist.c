@@ -338,7 +338,7 @@ void playlist_list(void)
 
 static unsigned int spos = 0;
 
-int playlist_set_row(struct gp_widget *table, int op, unsigned int pos)
+int playlist_set_row(gp_widget *table, int op, unsigned int pos)
 {
 	(void) table;
 
@@ -361,8 +361,9 @@ int playlist_set_row(struct gp_widget *table, int op, unsigned int pos)
 	return 0;
 }
 
-const char *playlist_get(struct gp_widget *table, unsigned int col)
+gp_widget_table_cell *playlist_get(gp_widget *table, unsigned int col)
 {
+	static gp_widget_table_cell cell;
 	(void) table;
 
 	if (col)
@@ -374,5 +375,8 @@ const char *playlist_get(struct gp_widget *table, unsigned int col)
 	else
 		fname = self.files[spos];
 
-	return fname;
+	cell.text = fname;
+	cell.bold = (spos == self.cur);
+
+	return &cell;
 }

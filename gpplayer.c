@@ -173,6 +173,8 @@ int load_track(struct audio_output *out, mpg123_handle *mh, const char *name)
 
 	set_info("Unknown", "Unknown", "Unknown");
 
+	gp_widget_redraw(info_widgets.playlist);
+
 	if (v2 != NULL) {
 		set_info(v2->artist ? v2->artist->p : NULL,
 			 v2->album ? v2->album->p : NULL,
