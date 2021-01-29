@@ -66,7 +66,6 @@ int creat_cfg_file(const char *path, mode_t dir_mode, mode_t file_mode)
 			break;
 
 		*del = 0;
-		printf("MKDIR '%s'\n", full_path);
 		if (mkdir(full_path, dir_mode)) {
 			if (errno != EEXIST)
 				return -1;

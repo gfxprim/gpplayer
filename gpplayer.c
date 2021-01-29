@@ -413,6 +413,18 @@ static void seek_callback(struct MW_Widget *self)
 }
 */
 
+static int app_handler(gp_widget_event *ev)
+{
+	if (ev->type != GP_WIDGET_EVENT_FREE)
+		return 0;
+
+	playlist_exit();
+
+	//stop audio output?
+
+	return 1;
+}
+
 int main(int argc, char *argv[])
 {
 	struct audio_output *out;
@@ -449,10 +461,10 @@ int main(int argc, char *argv[])
 	else
 		playlist_init("gpapps/gpplayer/playlist.txt");
 
+	gp_app_event_handler_set(app_handler);
+
 	for (i = 0; i < argc; i++)
 		playlist_add(argv[i]);
-
-	playlist_list();
 
 	tracks.out = out;
 	tracks.mh = mh;
