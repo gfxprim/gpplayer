@@ -433,7 +433,7 @@ int main(int argc, char *argv[])
 	mpg123_handle *mh;
 	int i;
 
-	gp_widget *layout = gp_widget_layout_json("gpplayer.json", &uids);
+	gp_widget *layout = gp_app_layout_load("gpplayer", &uids);
 
 	info_widgets.artist = gp_widget_by_uid(uids, "artist", GP_WIDGET_LABEL);
 	info_widgets.album = gp_widget_by_uid(uids, "album", GP_WIDGET_LABEL);
