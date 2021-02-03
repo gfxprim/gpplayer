@@ -8,7 +8,7 @@ all: $(DEP) $(BIN)
 %.dep: %.c
 	$(CC) $(CFLAGS) -M $< -o $@
 
-$(BIN): audio_output.o playlist.o
+$(BIN): audio_mixer.o audio_output.o playlist.o
 
 install:
 	install -D $(BIN) -t $(DESTDIR)/usr/bin/

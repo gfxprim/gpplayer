@@ -11,6 +11,7 @@
 #include <widgets/gp_widgets.h>
 
 #include "playlist.h"
+#include "audio_mixer.h"
 #include "audio_output.h"
 
 static void *uids;
@@ -427,11 +428,45 @@ static int app_handler(gp_widget_event *ev)
 	return 1;
 }
 
+static void mixer_volume_callback(struct audio_mixer *mixer, long volume)
+{
+	long avol = volume - mixer->master_volume_min;
+	long amax = mixer->master_volume_max - mixer->master_volume_min;
+	gp_widget *self = mixer->priv;
+
+	int vol = (avol * self->i->max + amax/2) / amax;
+
+	gp_widget_int_set(self, vol);
+}
+
+int audio_volume_set(gp_widget_event *ev)
+{
+	struct audio_mixer *mixer = ev->self->priv;
+
+	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+		return 0;
+
+	long amax = mixer->master_volume_max - mixer->master_volume_min;
+	int vol = gp_widget_int_get(ev->self);
+	int max = ev->self->i->max;
+
+	long avol = (vol * amax + max/2) / max + mixer->master_volume_min;
+
+	audio_mixer_set_master_volume(mixer, avol);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	struct audio_output *out;
 	mpg123_handle *mh;
 	int i;
+
+	struct audio_mixer mixer = {
+		.fds = gp_widgets_fds,
+		.master_volume_callback = mixer_volume_callback,
+	};
 
 	gp_widget *layout = gp_app_layout_load("gpplayer", &uids);
 
@@ -443,6 +478,13 @@ int main(int argc, char *argv[])
 	info_widgets.playlist = gp_widget_by_uid(uids, "playlist", GP_WIDGET_TABLE);
 
 	gp_widget_event_unmask(info_widgets.cover_art, GP_WIDGET_EVENT_RESIZE);
+
+	gp_widget *volume = gp_widget_by_uid(uids, "volume", GP_WIDGET_SLIDER);
+
+	volume->priv = &mixer;
+	mixer.priv = volume;
+
+	audio_mixer_init(&mixer, AUDIO_DEVICE_DEFAULT);
 
 	out = audio_output_create(AUDIO_DEVICE_DEFAULT, 2, AUDIO_FORMAT_S16LE, 48000);
 	if (out == NULL) {
