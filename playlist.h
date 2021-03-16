@@ -40,6 +40,8 @@ void playlist_add(const char *path);
 
 void playlist_rem(size_t off, size_t len);
 
+void playlist_clear(void);
+
 void playlist_list(void);
 
 void playlist_save(const char *fname);

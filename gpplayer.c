@@ -360,6 +360,17 @@ int button_playlist_rem(gp_widget_event *ev)
 	return 0;
 }
 
+int button_playlist_clear(gp_widget_event *ev)
+{
+	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+		return 0;
+
+	playlist_clear();
+
+	gp_widget_table_refresh(info_widgets.playlist);
+	return 0;
+}
+
 int button_playlist_add(gp_widget_event *ev)
 {
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)

@@ -326,6 +326,16 @@ void playlist_rem(size_t off, size_t len)
 	self.files = gp_vec_delete(self.files, off, len);
 }
 
+void playlist_clear(void)
+{
+	size_t i;
+
+	for (i = 0; i < gp_vec_len(self.files); i++)
+		free(self.files[i]);
+
+	self.files = gp_vec_resize(self.files, 0);
+}
+
 void playlist_list(void)
 {
 	size_t i;

@@ -112,7 +112,7 @@
      ]
     },
     {
-     "cols": 4,
+     "cols": 5,
      "border": "none",
      "halign": "fill",
      "uniform": "true",
@@ -140,6 +140,12 @@
        "btype": "rem",
        "halign": "fill",
        "on_event": "button_playlist_rem"
+      },
+      {
+       "type": "button",
+       "btype": "clear",
+       "halign": "fill",
+       "on_event": "button_playlist_clear"
       }
      ]
     }
