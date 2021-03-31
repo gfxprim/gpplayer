@@ -41,9 +41,9 @@
    ]
   },
   {
-   "type": "progressbar",
+   "type": "pbar",
    "halign": "fill",
-   "ptype": "seconds",
+   "unit": "seconds",
    "inverse": true,
    "uid": "playback"
   },
