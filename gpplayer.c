@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: LGPL-2.0-or-later
 /*
 
-   Copyright (C) 2007-2020 Cyril Hrubis <metan@ucw.cz>
+   Copyright (C) 2007-2021 Cyril Hrubis <metan@ucw.cz>
 
  */
 
@@ -14,7 +14,7 @@
 #include "audio_mixer.h"
 #include "audio_output.h"
 
-static void *uids;
+static gp_htable *uids;
 
 static mpg123_handle *init_mpg123(void)
 {
