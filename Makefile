@@ -12,7 +12,7 @@ $(BIN): audio_mixer.o audio_output.o playlist.o
 
 install:
 	install -D $(BIN) -t $(DESTDIR)/usr/bin/
-	install -m 644 -D $(BIN).json $(DESTDIR)/etc/gp_apps/$(BIN)/layout.json
+	install -m 644 -D layout.json $(DESTDIR)/etc/gp_apps/$(BIN)/layout.json
 
 -include $(DEP)
 
