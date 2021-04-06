@@ -19,13 +19,15 @@ struct audio_mixer {
 	long master_volume_min;
 	long master_volume_max;
 
-	void (*master_volume_callback)(struct audio_mixer *mixer, long volume);
+	void (*master_volume_callback)(struct audio_mixer *mixer, long volume, int mute);
 	void *priv;
 };
 
 int audio_mixer_init(struct audio_mixer *self, const char *device);
 
 void audio_mixer_set_master_volume(struct audio_mixer *self, long volume);
+
+void audio_mixer_set_master_mute(struct audio_mixer *self, int mute);
 
 void audio_mixer_exit(struct audio_mixer *self);
 

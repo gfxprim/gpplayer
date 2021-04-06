@@ -83,6 +83,7 @@ struct info_widgets {
 	gp_widget *playback;
 	gp_widget *cover_art;
 	gp_widget *playlist;
+	gp_widget *speaker_icon;
 } info_widgets;
 
 static void set_info(const char *artist, const char *album, const char *track)
@@ -439,13 +440,35 @@ static int app_handler(gp_widget_event *ev)
 	return 1;
 }
 
-static void mixer_volume_callback(struct audio_mixer *mixer, long volume)
+static void update_speaker_icon(int vol, int max, int mute)
+{
+	int type;
+
+	if (!info_widgets.speaker_icon)
+		return;
+
+	if (vol < max/3)
+		type = GP_WIDGET_STOCK_SPEAKER_MIN;
+	else if (vol < 2 * (max/3))
+		type = GP_WIDGET_STOCK_SPEAKER_MID;
+	else
+		type = GP_WIDGET_STOCK_SPEAKER_MAX;
+
+	if (mute)
+		type = GP_WIDGET_STOCK_SPEAKER_MUTE;
+
+	gp_widget_stock_type_set(info_widgets.speaker_icon, type);
+}
+
+static void mixer_volume_callback(struct audio_mixer *mixer, long volume, int mute)
 {
 	long avol = volume - mixer->master_volume_min;
 	long amax = mixer->master_volume_max - mixer->master_volume_min;
 	gp_widget *self = mixer->priv;
 
 	int vol = (avol * self->i->max + amax/2) / amax;
+
+	update_speaker_icon(vol, self->i->max, mute);
 
 	gp_widget_int_set(self, vol);
 }
@@ -464,6 +487,21 @@ int audio_volume_set(gp_widget_event *ev)
 	long avol = (vol * amax + max/2) / max + mixer->master_volume_min;
 
 	audio_mixer_set_master_volume(mixer, avol);
+
+	return 0;
+}
+
+int speaker_icon_ev(gp_widget_event *ev)
+{
+	struct audio_mixer *mixer = ev->self->priv;
+
+	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+		return 0;
+
+	if (ev->self->stock->type == GP_WIDGET_STOCK_SPEAKER_MUTE)
+		audio_mixer_set_master_mute(mixer, 0);
+	else
+		audio_mixer_set_master_mute(mixer, 1);
 
 	return 0;
 }
@@ -487,6 +525,10 @@ int main(int argc, char *argv[])
 	info_widgets.playback = gp_widget_by_uid(uids, "playback", GP_WIDGET_PROGRESSBAR);
 	info_widgets.cover_art = gp_widget_by_uid(uids, "cover_art", GP_WIDGET_PIXMAP);
 	info_widgets.playlist = gp_widget_by_uid(uids, "playlist", GP_WIDGET_TABLE);
+	info_widgets.speaker_icon = gp_widget_by_uid(uids, "speaker_icon", GP_WIDGET_STOCK);
+
+	if (info_widgets.speaker_icon)
+		info_widgets.speaker_icon->priv = &mixer;
 
 	gp_widget_event_unmask(info_widgets.cover_art, GP_WIDGET_EVENT_RESIZE);
 

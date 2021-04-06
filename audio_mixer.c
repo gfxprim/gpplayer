@@ -106,10 +106,12 @@ static int mixer_volume_callback(snd_mixer_elem_t *elem, unsigned int mask)
 	//TODO: mask
 
 	long volume;
+	int mute;
 
-	snd_mixer_selem_get_playback_volume(elem, 0, &volume);
+	snd_mixer_selem_get_playback_dB(elem, 0, &volume);
+	snd_mixer_selem_get_playback_switch(elem, 0, &mute);
 
-	self->master_volume_callback(self, volume);
+	self->master_volume_callback(self, volume, !mute);
 
 	return 0;
 }
@@ -124,14 +126,16 @@ int audio_mixer_init(struct audio_mixer *self, const char *device)
 	snd_mixer_elem_set_callback_private(self->master_volume, self);
 	snd_mixer_elem_set_callback(self->master_volume, mixer_volume_callback);
 
-        snd_mixer_selem_get_playback_volume_range(self->master_volume,
+        snd_mixer_selem_get_playback_dB_range(self->master_volume,
 	                                          &self->master_volume_min,
 	                                          &self->master_volume_max);
 
 	if (self->master_volume_callback) {
 		long volume;
-		snd_mixer_selem_get_playback_volume(self->master_volume, 0, &volume);
-		self->master_volume_callback(self, volume);
+		int mute;
+		snd_mixer_selem_get_playback_dB(self->master_volume, 0, &volume);
+		snd_mixer_selem_get_playback_switch(self->master_volume, 0, &mute);
+		self->master_volume_callback(self, volume, !mute);
 	}
 
 	return 0;
@@ -139,7 +143,16 @@ int audio_mixer_init(struct audio_mixer *self, const char *device)
 
 void audio_mixer_set_master_volume(struct audio_mixer *self, long volume)
 {
-	snd_mixer_selem_set_playback_volume_all(self->master_volume, volume);
+	snd_mixer_selem_set_playback_dB_all(self->master_volume, volume, 1);
+
+	mixer_volume_callback(self->master_volume, 0);
+}
+
+void audio_mixer_set_master_mute(struct audio_mixer *self, int mute)
+{
+	snd_mixer_selem_set_playback_switch_all(self->master_volume, !mute);
+
+	mixer_volume_callback(self->master_volume, 0);
 }
 
 void audio_mixer_exit(struct audio_mixer *self)

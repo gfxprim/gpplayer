@@ -48,12 +48,30 @@
    "uid": "playback"
   },
   {
-   "type": "slider",
-   "min": 0,
-   "max": 20,
-   "on_event": "audio_volume_set",
-   "uid": "volume",
-   "halign": "fill"
+   "cols": 2,
+   "align": "fill",
+   "cfill": "0, 1",
+   "cpadf": "0, 0, 0",
+   "cpad": "0, 1, 0",
+   "rpad": "0, 0",
+   "widgets": [
+    {
+     "type": "stock",
+     "stock": "speaker_max",
+     "min_size": 1,
+     "align": "fill",
+     "uid": "speaker_icon",
+     "on_event": "speaker_icon_ev"
+    },
+    {
+     "type": "slider",
+     "min": 0,
+     "max": 30,
+     "on_event": "audio_volume_set",
+     "uid": "volume",
+     "halign": "fill"
+    }
+   ]
   },
   {
    "cols": 4,
