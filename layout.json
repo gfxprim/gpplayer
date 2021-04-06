@@ -8,33 +8,37 @@
    "widgets": [
     {
      "type": "pixmap",
-     "w": 100,
-     "h": 100,
+     "w": 80,
+     "h": 80,
      "uid": "cover_art",
      "on_event": "pixmap_event"
     },
     {
      "rows": 3,
      "border": "none",
+     "rpad": "4 * 0",
      "widgets": [
       {
        "type": "label",
        "size": 18,
        "text": "Artist",
        "uid": "artist",
+       "tattr": "bold",
        "halign": "fill"
       },
       {
        "type": "label",
        "size": 18,
        "text": "Album",
-       "uid": "album"
+       "uid": "album",
+       "halign": "fill"
       },
       {
        "type": "label",
        "size": 18,
        "text": "Track",
-       "uid": "track"
+       "uid": "track",
+       "halign": "fill"
       }
      ]
     }
