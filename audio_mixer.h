@@ -19,6 +19,8 @@ struct audio_mixer {
 	long master_volume_min;
 	long master_volume_max;
 
+	int use_db:1;
+
 	void (*master_volume_callback)(struct audio_mixer *mixer, long volume, int mute);
 	void *priv;
 };
