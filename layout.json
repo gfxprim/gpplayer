@@ -52,13 +52,33 @@
    "uid": "playback"
   },
   {
-   "cols": 2,
+   "cols": 3,
+   "rows": 2,
    "align": "fill",
-   "cfill": "0, 1",
-   "cpadf": "0, 0, 0",
-   "cpad": "0, 1, 0",
-   "rpad": "0, 0",
+   "cfill": "0, 0, 1",
+   "cpad": "0, 1, 1, 0",
+   "cpadf": "0, 0, 0, 0",
+   "rpad": "0, 1, 0",
    "widgets": [
+    {
+     "type": "stock",
+     "stock": "software",
+     "min_size": 1,
+     "align": "fill"
+    },
+    {
+     "type": "stock",
+     "stock": "hardware",
+     "min_size": 1,
+     "align": "fill"
+    },
+    {
+     "type": "stock",
+     "stock": "speaker_max",
+     "min_size": 1,
+     "uid": "softvol_icon",
+     "align": "fill"
+    },
     {
      "type": "stock",
      "stock": "speaker_max",
@@ -66,6 +86,13 @@
      "align": "fill",
      "uid": "speaker_icon",
      "on_event": "speaker_icon_ev"
+    },
+    {
+     "type": "slider",
+     "min": 0,
+     "max": 30,
+     "halign": "fill",
+     "on_event": "set_softvol"
     },
     {
      "type": "slider",

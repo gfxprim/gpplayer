@@ -84,6 +84,8 @@ struct info_widgets {
 	gp_widget *cover_art;
 	gp_widget *playlist;
 	gp_widget *speaker_icon;
+	gp_widget *softvol_icon;
+	gp_widget *decoder_gain;
 } info_widgets;
 
 static void set_info(const char *artist, const char *album, const char *track)
@@ -506,6 +508,40 @@ int speaker_icon_ev(gp_widget_event *ev)
 	return 0;
 }
 
+int set_softvol(gp_widget_event *ev)
+{
+	unsigned int max = ev->self->slider->max;
+	unsigned int val = ev->self->slider->val;
+
+	if (ev->type == GP_WIDGET_EVENT_NEW) {
+		gp_widget_slider_set(ev->self, max - max/6);
+		return 0;
+	}
+
+	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+		return 0;
+
+	double vol = 1.00 * val / (max - max/6);
+
+	mpg123_volume(tracks.mh, vol);
+
+	if (!info_widgets.softvol_icon)
+		return 0;
+
+	int type;
+
+	if (vol < 1.00/3)
+		type = GP_WIDGET_STOCK_SPEAKER_MIN;
+	else if (vol < 2.00/3)
+		type = GP_WIDGET_STOCK_SPEAKER_MID;
+	else
+		type = GP_WIDGET_STOCK_SPEAKER_MAX;
+
+	gp_widget_stock_type_set(info_widgets.softvol_icon, type);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	struct audio_output *out;
@@ -526,6 +562,8 @@ int main(int argc, char *argv[])
 	info_widgets.cover_art = gp_widget_by_uid(uids, "cover_art", GP_WIDGET_PIXMAP);
 	info_widgets.playlist = gp_widget_by_uid(uids, "playlist", GP_WIDGET_TABLE);
 	info_widgets.speaker_icon = gp_widget_by_uid(uids, "speaker_icon", GP_WIDGET_STOCK);
+	info_widgets.softvol_icon = gp_widget_by_uid(uids, "softvol_icon", GP_WIDGET_STOCK);
+	info_widgets.decoder_gain = gp_widget_by_uid(uids, "gain", GP_WIDGET_STOCK);
 
 	if (info_widgets.speaker_icon)
 		info_widgets.speaker_icon->priv = &mixer;
