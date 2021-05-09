@@ -8,8 +8,8 @@
    "widgets": [
     {
      "type": "pixmap",
-     "w": 80,
-     "h": 80,
+     "w": "3asc 6pad",
+     "h": "3asc 6pad",
      "uid": "cover_art",
      "on_event": "pixmap_event"
     },
@@ -53,36 +53,43 @@
   },
   {
    "cols": 3,
-   "rows": 2,
+   "rows": 3,
    "align": "fill",
    "cfill": "0, 0, 1",
    "cpad": "0, 1, 1, 0",
    "cpadf": "0, 0, 0, 0",
-   "rpad": "0, 1, 0",
+   "rpad": "0, 0, 0, 0",
    "widgets": [
     {
      "type": "stock",
      "stock": "software",
-     "min_size": 1,
+     "min_size": "1asc 4px",
      "align": "fill"
+    },
+    {
+     "type": "stock",
+     "stock": "arrow_down",
+     "min_size": "1pad"
     },
     {
      "type": "stock",
      "stock": "hardware",
-     "min_size": 1,
+     "min_size": "1asc 4px",
      "align": "fill"
     },
     {
      "type": "stock",
      "stock": "speaker_max",
-     "min_size": 1,
+     "min_size": "1asc 4px",
      "uid": "softvol_icon",
      "align": "fill"
     },
     {
+    },
+    {
      "type": "stock",
      "stock": "speaker_max",
-     "min_size": 1,
+     "min_size": "1asc 4px",
      "align": "fill",
      "uid": "speaker_icon",
      "on_event": "speaker_icon_ev"
@@ -93,6 +100,8 @@
      "max": 30,
      "halign": "fill",
      "on_event": "set_softvol"
+    },
+    {
     },
     {
      "type": "slider",
