@@ -20,7 +20,7 @@
      "widgets": [
       {
        "type": "label",
-       "size": 18,
+       "width": 18,
        "text": "Artist",
        "uid": "artist",
        "tattr": "bold",
@@ -28,14 +28,14 @@
       },
       {
        "type": "label",
-       "size": 18,
+       "width": 18,
        "text": "Album",
        "uid": "album",
        "halign": "fill"
       },
       {
        "type": "label",
-       "size": 18,
+       "width": 18,
        "text": "Track",
        "uid": "track",
        "halign": "fill"
@@ -117,7 +117,7 @@
    "cols": 4,
    "border": "none",
    "halign": "fill",
-   "uniform": "true",
+   "uniform": true,
    "widgets": [
     {
      "type": "button",
@@ -173,7 +173,7 @@
      "cols": 5,
      "border": "none",
      "halign": "fill",
-     "uniform": "true",
+     "uniform": true,
      "widgets": [
       {
        "type": "button",
