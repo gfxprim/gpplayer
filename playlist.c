@@ -114,7 +114,7 @@ static void add_path(const char *path, const char *fname)
 	size_t len = gp_vec_len(self.files);
 	const char *cwd = getenv("PWD");
 
-	new = gp_vec_append(self.files, 1);
+	new = gp_vec_expand(self.files, 1);
 	if (!new)
 		return;
 
@@ -138,7 +138,7 @@ static void add_path(const char *path, const char *fname)
 	}
 
 	if (!self.files[len])
-		self.files = gp_vec_remove(self.files, 1);
+		self.files = gp_vec_shrink(self.files, 1);
 }
 
 void playlist_load(const char *path)
