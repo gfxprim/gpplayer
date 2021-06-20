@@ -105,24 +105,35 @@ static void set_info(const char *artist, const char *album, const char *track)
 
 static void show_album_art(unsigned char *data, size_t size)
 {
-	gp_io *io = gp_io_mem(data, size, NULL);
+	gp_widget *cover_art = info_widgets.cover_art;
+	gp_io *io;
 	gp_pixmap *p;
 
-	p = gp_read_image(io, NULL);
-
-	if (!p)
+	if (!cover_art->pixmap->pixmap)
 		return;
 
-	gp_widget *cover_art = info_widgets.cover_art;
+	io = gp_io_mem(data, size, NULL);
+	if (!io)
+		return;
+
+	p = gp_read_image(io, NULL);
+	if (!p) {
+		gp_io_close(io);
+		return;
+	}
 
 	float rat = GP_MIN(1.00 * cover_art->h / p->h,
 	                   1.00 * cover_art->w / p->w);
 
-	if (cover_art->pixmap->pixmap) {
-		gp_pixmap *resized = gp_filter_resize_alloc(p, p->w * rat, p->h * rat, GP_INTERP_LINEAR_LF_INT, NULL);
-		gp_blit(resized, 0, 0, cover_art->w, cover_art->h, cover_art->pixmap->pixmap, 0, 0);
-		gp_pixmap_free(resized);
-	}
+	gp_size rw = p->w * rat;
+	gp_size rh = p->h * rat;
+
+	gp_coord off_x = (cover_art->w - rw)/2;
+	gp_coord off_y = (cover_art->h - rh)/2;
+
+	gp_pixmap *resized = gp_filter_resize_alloc(p, rw, rh, GP_INTERP_LINEAR_LF_INT, NULL);
+	gp_blit(resized, off_x, off_y, resized->w, resized->h, cover_art->pixmap->pixmap, 0, 0);
+	gp_pixmap_free(resized);
 
 	gp_widget_redraw(cover_art);
 
