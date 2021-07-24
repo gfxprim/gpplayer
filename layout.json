@@ -1,6 +1,8 @@
 {
  "version": 1,
  "rows": 5,
+ "valign": "fill",
+ "rfill": "0, 0, 0, 0, 1",
  "widgets": [
   {
    "cols": 2,
@@ -151,10 +153,11 @@
   {
    "rows": 2,
    "border": "none",
-   "halign": "fill",
+   "rfill": "1, 0",
+   "align": "fill",
    "widgets": [
     {
-     "halign": "fill",
+     "align": "fill",
      "type": "table",
      "min_rows": 5,
      "get_elem": "playlist_get",
