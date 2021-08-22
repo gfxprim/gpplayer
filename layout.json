@@ -160,7 +160,6 @@
      "align": "fill",
      "type": "table",
      "min_rows": 5,
-     "get_elem": "playlist_get",
      "set_row": "playlist_set_row",
      "on_event": "playlist_event",
      "uid": "playlist",
@@ -168,6 +167,7 @@
       {
        "label": "Playlist",
        "min_size": 20,
+       "get": "playlist_get",
        "fill": 1
       }
      ]

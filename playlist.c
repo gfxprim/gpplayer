@@ -371,13 +371,9 @@ int playlist_set_row(gp_widget *table, int op, unsigned int pos)
 	return 0;
 }
 
-gp_widget_table_cell *playlist_get(gp_widget *table, unsigned int col)
+int playlist_get(gp_widget *table, gp_widget_table_cell *cell)
 {
-	static gp_widget_table_cell cell;
 	(void) table;
-
-	if (col)
-		return NULL;
 
 	const char *fname = rindex(self.files[spos], '/');
 	if (fname)
@@ -385,8 +381,8 @@ gp_widget_table_cell *playlist_get(gp_widget *table, unsigned int col)
 	else
 		fname = self.files[spos];
 
-	cell.text = fname;
-	cell.tattr = (spos == self.cur) ? GP_TATTR_BOLD : 0;
+	cell->text = fname;
+	cell->tattr = (spos == self.cur) ? GP_TATTR_BOLD : 0;
 
-	return &cell;
+	return 1;
 }
