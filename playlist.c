@@ -386,7 +386,7 @@ gp_widget_table_cell *playlist_get(gp_widget *table, unsigned int col)
 		fname = self.files[spos];
 
 	cell.text = fname;
-	cell.bold = (spos == self.cur);
+	cell.tattr = (spos == self.cur) ? GP_TATTR_BOLD : 0;
 
 	return &cell;
 }
