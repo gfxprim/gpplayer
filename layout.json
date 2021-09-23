@@ -160,14 +160,14 @@
      "align": "fill",
      "type": "table",
      "min_rows": 5,
-     "set_row": "playlist_set_row",
+     "col_ops": "playlist_ops",
      "on_event": "playlist_event",
      "uid": "playlist",
      "header": [
       {
        "label": "Playlist",
        "min_size": 20,
-       "get": "playlist_get",
+       "id": "name",
        "fill": 1
       }
      ]

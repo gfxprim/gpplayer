@@ -9,33 +9,31 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <string.h>
+
 #include <utils/gp_vec.h>
+#include <widgets/gp_widgets.h>
 
 #include "playlist.h"
-#include "widgets/gp_widgets.h"
 
-struct playlist self;
+struct playlist playlist;
 
 const char *save_path;
 
 void playlist_init(const char *path)
 {
-	self.cur = 0;
-	self.loop = 0;
-	self.shuffle = 0;
-	self.files = gp_vec_new(0, sizeof(char *));
+	playlist.cur = 0;
+	playlist.loop = 0;
+	playlist.shuffle = 0;
+	playlist.files = gp_vec_new(0, sizeof(char *));
 
 	if (path) {
 		save_path = strdup(path);
 		playlist_load(path);
 	}
 }
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
 
 int creat_cfg_file(const char *path, mode_t dir_mode, mode_t file_mode)
 {
@@ -111,34 +109,34 @@ void playlist_exit(void)
 static void add_path(const char *path, const char *fname)
 {
 	void *new;
-	size_t len = gp_vec_len(self.files);
+	size_t len = gp_vec_len(playlist.files);
 	const char *cwd = getenv("PWD");
 
-	new = gp_vec_expand(self.files, 1);
+	new = gp_vec_expand(playlist.files, 1);
 	if (!new)
 		return;
 
-	self.files = new;
+	playlist.files = new;
 
 	if (path) {
 		if (path[0] == '/') {
-			if (asprintf(&self.files[len], "%s/%s", path, fname) < 0)
-				self.files[len] = NULL;
+			if (asprintf(&playlist.files[len], "%s/%s", path, fname) < 0)
+				playlist.files[len] = NULL;
 		} else {
-			if (asprintf(&self.files[len], "%s/%s/%s", cwd, path, fname) < 0)
-				self.files[len] = NULL;
+			if (asprintf(&playlist.files[len], "%s/%s/%s", cwd, path, fname) < 0)
+				playlist.files[len] = NULL;
 		}
 	} else {
 		if (fname[0] == '/') {
-			self.files[len] = strdup(fname);
+			playlist.files[len] = strdup(fname);
 		} else {
-			if (asprintf(&self.files[len], "%s/%s", cwd, fname) < 0)
-				self.files[len] = NULL;
+			if (asprintf(&playlist.files[len], "%s/%s", cwd, fname) < 0)
+				playlist.files[len] = NULL;
 		}
 	}
 
-	if (!self.files[len])
-		self.files = gp_vec_shrink(self.files, 1);
+	if (!playlist.files[len])
+		playlist.files = gp_vec_shrink(playlist.files, 1);
 }
 
 void playlist_load(const char *path)
@@ -175,8 +173,8 @@ void playlist_save(const char *path)
 	if (fd < 0)
 		return;
 
-	for (i = 0; i < gp_vec_len(self.files); i++) {
-		write(fd, self.files[i], strlen(self.files[i]));
+	for (i = 0; i < gp_vec_len(playlist.files); i++) {
+		write(fd, playlist.files[i], strlen(playlist.files[i]));
 		write(fd, "\n", 1);
 	}
 
@@ -185,17 +183,17 @@ void playlist_save(const char *path)
 
 int playlist_next(void)
 {
-	if (self.shuffle) {
+	if (playlist.shuffle) {
 		//TODO
 	}
 
-	if (self.cur + 1 >= gp_vec_len(self.files)) {
-		if (self.loop) {
-			self.cur = 0;
+	if (playlist.cur + 1 >= gp_vec_len(playlist.files)) {
+		if (playlist.loop) {
+			playlist.cur = 0;
 			return 1;
 		}
 	} else {
-		self.cur++;
+		playlist.cur++;
 		return 1;
 	}
 
@@ -204,17 +202,17 @@ int playlist_next(void)
 
 int playlist_prev(void)
 {
-	if (self.shuffle) {
+	if (playlist.shuffle) {
 		//TODO
 	}
 
-	if (self.cur == 0) {
-		if (self.loop) {
-			self.cur = gp_vec_len(self.files) - 1;
+	if (playlist.cur == 0) {
+		if (playlist.loop) {
+			playlist.cur = gp_vec_len(playlist.files) - 1;
 			return 1;
 		}
 	} else {
-		self.cur--;
+		playlist.cur--;
 		return 1;
 	}
 
@@ -226,43 +224,43 @@ int playlist_move_up(size_t pos)
 	if (pos <= 0)
 		return 0;
 
-	if (pos >= gp_vec_len(self.files))
+	if (pos >= gp_vec_len(playlist.files))
 		return 0;
 
-	char *tmp = self.files[pos-1];
-	self.files[pos-1] = self.files[pos];
-	self.files[pos] = tmp;
+	char *tmp = playlist.files[pos-1];
+	playlist.files[pos-1] = playlist.files[pos];
+	playlist.files[pos] = tmp;
 
 	return 1;
 }
 
 int playlist_move_down(size_t pos)
 {
-	if (pos + 1 >= gp_vec_len(self.files))
+	if (pos + 1 >= gp_vec_len(playlist.files))
 		return 0;
 
-	char *tmp = self.files[pos+1];
-	self.files[pos+1] = self.files[pos];
-	self.files[pos] = tmp;
+	char *tmp = playlist.files[pos+1];
+	playlist.files[pos+1] = playlist.files[pos];
+	playlist.files[pos] = tmp;
 
 	return 1;
 }
 
 int playlist_set(size_t pos)
 {
-	if (pos >= gp_vec_len(self.files))
+	if (pos >= gp_vec_len(playlist.files))
 		return 0;
 
-	self.cur = pos;
+	playlist.cur = pos;
 	return 1;
 }
 
 const char *playlist_cur(void)
 {
-	if (!gp_vec_len(self.files))
+	if (!gp_vec_len(playlist.files))
 		return NULL;
 
-	return self.files[self.cur];
+	return playlist.files[playlist.cur];
 }
 
 static int cmp(const void *a, const void *b)
@@ -287,7 +285,7 @@ void playlist_add(const char *path)
 	if (!dir)
 		return;
 
-	size_t first = gp_vec_len(self.files);
+	size_t first = gp_vec_len(playlist.files);
 
 	while ((ent = readdir(dir))) {
 		if (!(ent->d_type & DT_REG))
@@ -304,9 +302,9 @@ void playlist_add(const char *path)
 		add_path(path, ent->d_name);
 	}
 
-	size_t last = gp_vec_len(self.files);
+	size_t last = gp_vec_len(playlist.files);
 
-	qsort(&self.files[first], last-first, sizeof(char*), cmp);
+	qsort(&playlist.files[first], last-first, sizeof(char*), cmp);
 
 	closedir(dir);
 }
@@ -315,25 +313,25 @@ void playlist_rem(size_t off, size_t len)
 {
 	size_t i;
 
-	if (off >= gp_vec_len(self.files))
+	if (off >= gp_vec_len(playlist.files))
 		return;
 
-	len = GP_MIN(gp_vec_len(self.files) - off, len);
+	len = GP_MIN(gp_vec_len(playlist.files) - off, len);
 
 	for (i = 0; i < len; i++)
-		free(self.files[i + off]);
+		free(playlist.files[i + off]);
 
-	self.files = gp_vec_del(self.files, off, len);
+	playlist.files = gp_vec_del(playlist.files, off, len);
 }
 
 void playlist_clear(void)
 {
 	size_t i;
 
-	for (i = 0; i < gp_vec_len(self.files); i++)
-		free(self.files[i]);
+	for (i = 0; i < gp_vec_len(playlist.files); i++)
+		free(playlist.files[i]);
 
-	self.files = gp_vec_resize(self.files, 0);
+	playlist.files = gp_vec_resize(playlist.files, 0);
 }
 
 void playlist_list(void)
@@ -342,47 +340,57 @@ void playlist_list(void)
 
 	printf("PLAYLIST\n--------\n\n");
 
-	for (i = 0; i < gp_vec_len(self.files); i++)
-		printf("- '%s'\n", self.files[i]);
+	for (i = 0; i < gp_vec_len(playlist.files); i++)
+		printf("- '%s'\n", playlist.files[i]);
 }
 
-static unsigned int spos = 0;
-
-int playlist_set_row(gp_widget *table, int op, unsigned int pos)
+static int playlist_seek_row(gp_widget *self, int op, unsigned int pos)
 {
-	(void) table;
+	gp_widget_table *table = self->tbl;
 
 	switch (op) {
 	case GP_TABLE_ROW_RESET:
-		spos = 0;
+		table->row_idx = 0;
 	break;
 	case GP_TABLE_ROW_ADVANCE:
-		if (spos + pos >= gp_vec_len(self.files))
+		if (table->row_idx + pos >= gp_vec_len(playlist.files))
 			return 0;
 
-		spos += pos;
+		table->row_idx += pos;
 		return 1;
 	break;
-	case GP_TABLE_ROW_TELL:
-		return gp_vec_len(self.files);
+	case GP_TABLE_ROW_MAX:
+		return gp_vec_len(playlist.files);
 	break;
 	}
 
 	return 0;
 }
 
-int playlist_get(gp_widget *table, gp_widget_table_cell *cell)
+static int playlist_get(gp_widget *self, gp_widget_table_cell *cell, unsigned int col_id)
 {
-	(void) table;
+	unsigned int row = self->tbl->row_idx;
 
-	const char *fname = rindex(self.files[spos], '/');
+	if (col_id)
+		return 0;
+
+	const char *fname = rindex(playlist.files[row], '/');
 	if (fname)
 		fname++;
 	else
-		fname = self.files[spos];
+		fname = playlist.files[row];
 
 	cell->text = fname;
-	cell->tattr = (spos == self.cur) ? GP_TATTR_BOLD : 0;
+	cell->tattr = (row == playlist.cur) ? GP_TATTR_BOLD : 0;
 
 	return 1;
 }
+
+const gp_widget_table_col_ops playlist_ops = {
+	.seek_row = playlist_seek_row,
+	.get_cell = playlist_get,
+	.col_map = {
+		{.id = "name", .idx = 0},
+		{}
+	}
+};
