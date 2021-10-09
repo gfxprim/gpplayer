@@ -393,7 +393,7 @@ int button_playlist_add(gp_widget_event *ev)
 	gp_dialog *dialog = gp_dialog_file_open_new(NULL);
 
 	if (gp_dialog_run(dialog) == GP_WIDGET_DIALOG_PATH)
-		playlist_add(gp_dialog_file_open_path(dialog));
+		playlist_add(gp_dialog_file_path(dialog));
 
 	gp_dialog_free(dialog);
 
