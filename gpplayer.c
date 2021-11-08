@@ -351,6 +351,9 @@ int playlist_event(gp_widget_event *ev)
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)
 		return 0;
 
+	if (ev->sub_type != GP_WIDGET_TABLE_TRIGGER)
+		return 0;
+
 	if (!playlist_set(ev->self->tbl->selected_row))
 		return 0;
 
