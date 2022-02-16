@@ -486,7 +486,7 @@ static void mixer_volume_callback(struct audio_mixer *mixer, long volume, int mu
 
 	update_speaker_icon(vol, self->i->max, mute);
 
-	gp_widget_int_set(self, vol);
+	gp_widget_int_val_set(self, vol);
 }
 
 int audio_volume_set(gp_widget_event *ev)
@@ -497,7 +497,7 @@ int audio_volume_set(gp_widget_event *ev)
 		return 0;
 
 	long amax = mixer->master_volume_max - mixer->master_volume_min;
-	int vol = gp_widget_int_get(ev->self);
+	int vol = gp_widget_int_val_get(ev->self);
 	int max = ev->self->i->max;
 
 	long avol = (vol * amax + max/2) / max + mixer->master_volume_min;
@@ -528,7 +528,7 @@ int set_softvol(gp_widget_event *ev)
 	unsigned int val = ev->self->slider->val;
 
 	if (ev->type == GP_WIDGET_EVENT_NEW) {
-		gp_widget_slider_set(ev->self, max - max/6);
+		gp_widget_int_val_set(ev->self, max - max/6);
 		return 0;
 	}
 
