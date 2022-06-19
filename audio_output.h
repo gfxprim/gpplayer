@@ -10,13 +10,26 @@
 
 #include <alsa/asoundlib.h>
 #include <stdint.h>
+#include <endian.h>
 
 #define AUDIO_DEVICE_DEFAULT "default"
 
 enum audio_format {
 	AUDIO_FORMAT_S16LE,
+	AUDIO_FORMAT_S16BE,
 	AUDIO_FORMAT_S32LE,
+	AUDIO_FORMAT_S32BE,
 };
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+# define AUDIO_FORMAT_S16 AUDIO_FORMAT_S16LE
+# define AUDIO_FORMAT_S32 AUDIO_FORMAT_S32LE
+#elif __BYTE_ORDER == __BIG_ENDIAN
+# define AUDIO_FORMAT_S16 AUDIO_FORMAT_S16BE
+# define AUDIO_FORMAT_S32 AUDIO_FORMAT_S32BE
+#else
+# error Unknown indianity!
+#endif
 
 struct audio_output {
 	snd_pcm_t *playback_handle;

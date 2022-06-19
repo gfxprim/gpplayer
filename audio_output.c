@@ -16,8 +16,14 @@ static uint32_t convert_fmt(enum audio_format fmt)
 	case AUDIO_FORMAT_S16LE:
 		return SND_PCM_FORMAT_S16_LE;
 	break;
+	case AUDIO_FORMAT_S16BE:
+		return SND_PCM_FORMAT_S16_BE;
+	break;
 	case AUDIO_FORMAT_S32LE:
 		return SND_PCM_FORMAT_S32_LE;
+	break;
+	case AUDIO_FORMAT_S32BE:
+		return SND_PCM_FORMAT_S32_BE;
 	break;
 	default:
 		return SND_PCM_FORMAT_UNKNOWN;
@@ -29,8 +35,12 @@ static const char *str_fmt(enum audio_format fmt)
 	switch (fmt) {
 	case AUDIO_FORMAT_S16LE:
 		return "s16le";
+	case AUDIO_FORMAT_S16BE:
+		return "s16be";
 	case AUDIO_FORMAT_S32LE:
 		return "s32le";
+	case AUDIO_FORMAT_S32BE:
+		return "s32be";
 	default:
 		return "unknown";
 	}
@@ -40,8 +50,10 @@ unsigned int audio_format_size(enum audio_format fmt)
 {
 	switch (fmt) {
 	case AUDIO_FORMAT_S16LE:
+	case AUDIO_FORMAT_S16BE:
 		return 2;
 	case AUDIO_FORMAT_S32LE:
+	case AUDIO_FORMAT_S32BE:
 		return 4;
 	default:
 		return 0;

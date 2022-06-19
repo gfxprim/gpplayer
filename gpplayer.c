@@ -53,13 +53,12 @@ err0:
 
 static enum audio_format convert_fmt(int encoding)
 {
-	//TODO endianity?
 	switch (encoding) {
 	case MPG123_ENC_SIGNED_16:
-		return AUDIO_FORMAT_S16LE;
+		return AUDIO_FORMAT_S16;
 	break;
 	case MPG123_ENC_SIGNED_32:
-		return AUDIO_FORMAT_S32LE;
+		return AUDIO_FORMAT_S32;
 	break;
 	default:
 		printf("format %0x\n", encoding);
@@ -591,7 +590,7 @@ int main(int argc, char *argv[])
 
 	audio_mixer_init(&mixer, AUDIO_DEVICE_DEFAULT);
 
-	out = audio_output_create(AUDIO_DEVICE_DEFAULT, 2, AUDIO_FORMAT_S16LE, 48000);
+	out = audio_output_create(AUDIO_DEVICE_DEFAULT, 2, AUDIO_FORMAT_S16, 48000);
 	if (out == NULL) {
 		GP_WARN("Failed to initalize alsa output");
 		return 1;
