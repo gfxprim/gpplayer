@@ -609,7 +609,7 @@ int main(int argc, char *argv[])
 	else
 		playlist_init("gpapps/gpplayer/playlist.txt");
 
-	gp_app_event_handler_set(app_handler);
+	gp_app_on_event_set(app_handler);
 
 	for (i = 0; i < argc; i++)
 		playlist_add(argv[i]);
