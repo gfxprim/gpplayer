@@ -1,7 +1,7 @@
-//SPDX-License-Identifier: LGPL-2.0-or-later
+//SPDX-License-Identifier: GPL-2.0-or-later
 /*
 
-   Copyright (C) 2007-2021 Cyril Hrubis <metan@ucw.cz>
+   Copyright (C) 2007-2022 Cyril Hrubis <metan@ucw.cz>
 
  */
 
@@ -559,6 +559,18 @@ int set_softvol(gp_widget_event *ev)
 	return 0;
 }
 
+static gp_app_info app_info = {
+	.name = "gpplayer",
+	.desc = "A simple mp3 player",
+	.version = "1.0",
+	.license = "GPL-2.0-or-later",
+	.url = "http://github.com/gfxprim/gpplayer",
+	.authors = (gp_app_info_author []) {
+		{.name = "Cyril Hrubis", .email = "metan@ucw.cz", .years = "2007-2022"},
+		{}
+	}
+};
+
 int main(int argc, char *argv[])
 {
 	struct audio_output *out;
@@ -569,6 +581,8 @@ int main(int argc, char *argv[])
 		.fds = gp_widgets_fds,
 		.master_volume_callback = mixer_volume_callback,
 	};
+
+	gp_app_info_set(&app_info);
 
 	gp_widget *layout = gp_app_layout_load("gpplayer", &uids);
 
