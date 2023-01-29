@@ -1,4 +1,5 @@
-CFLAGS=-W -Wall -Wextra -O2 $(shell gfxprim-config --cflags)
+CFLAGS?=-W -Wall -Wextra -O2
+CFLAGS+=$(shell gfxprim-config --cflags)
 LDLIBS=-lgfxprim $(shell gfxprim-config --libs-widgets --libs-loaders) -lasound -lmpg123
 BIN=gpplayer
 DEP=$(BIN:=.dep)
