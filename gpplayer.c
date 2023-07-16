@@ -243,7 +243,7 @@ static uint32_t playback_callback(gp_timer *self)
 		} else {
 			tracks.playing = 0;
 			audio_output_stop(tracks.out);
-			return 0;
+			return GP_TIMER_STOP;
 		}
 	}
 
