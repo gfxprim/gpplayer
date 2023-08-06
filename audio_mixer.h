@@ -13,7 +13,6 @@
 
 struct audio_mixer {
 	snd_mixer_t *mixer;
-	struct gp_fds *fds;
 
 	snd_mixer_elem_t *master_volume;
 	long master_volume_min;

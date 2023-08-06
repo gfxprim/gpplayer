@@ -578,7 +578,6 @@ int main(int argc, char *argv[])
 	int i;
 
 	struct audio_mixer mixer = {
-		.fds = gp_widgets_fds,
 		.master_volume_callback = mixer_volume_callback,
 	};
 

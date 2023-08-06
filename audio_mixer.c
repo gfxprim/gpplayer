@@ -6,11 +6,11 @@
  */
 
 #include <core/gp_debug.h>
+#include <widgets/gp_widget_fds.h>
 #include "audio_mixer.h"
 
-static int mixer_poll_callback(struct gp_fd *self, struct pollfd *pfd)
+static int mixer_poll_callback(gp_fd *self)
 {
-	(void) pfd;
 	struct audio_mixer *mixer = self->priv;
 
 	snd_mixer_handle_events(mixer->mixer);
@@ -29,7 +29,7 @@ static void register_mixer_fds(struct audio_mixer *self)
 	}
 
 	for (i = 0; i < nfds; i++)
-		gp_fds_add(self->fds, pfds[i].fd, pfds[i].events, mixer_poll_callback, self);
+		gp_widget_fds_add(pfds[i].fd, pfds[i].events, mixer_poll_callback, self);
 }
 
 static void unregister_mixer_fds(struct audio_mixer *self)
@@ -43,7 +43,7 @@ static void unregister_mixer_fds(struct audio_mixer *self)
 	}
 
 	for (i = 0; i < nfds; i++)
-		gp_fds_rem(self->fds, pfds[i].fd);
+		gp_widget_fds_rem(pfds[i].fd);
 }
 
 static snd_mixer_t *mixer_open(const char *alsa_device)
