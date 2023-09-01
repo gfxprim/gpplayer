@@ -607,6 +607,9 @@ int main(int argc, char *argv[])
 
 	audio_mixer_init(&mixer, AUDIO_DEVICE_DEFAULT);
 
+	for (i = 0; i < (int)mixer.poll_fds_cnt; i++)
+		gp_widget_poll_add(&mixer.poll_fds[i]);
+
 	out = audio_output_create(AUDIO_DEVICE_DEFAULT, 2, AUDIO_FORMAT_S16, 48000);
 	if (out == NULL) {
 		GP_WARN("Failed to initalize alsa output");

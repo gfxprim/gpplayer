@@ -8,7 +8,7 @@
 #ifndef AUDIO_MIXER_H__
 #define AUDIO_MIXER_H__
 
-#include <utils/gp_fds.h>
+#include <utils/gp_poll.h>
 #include <alsa/asoundlib.h>
 
 struct audio_mixer {
@@ -22,6 +22,10 @@ struct audio_mixer {
 
 	void (*master_volume_callback)(struct audio_mixer *mixer, long volume, int mute);
 	void *priv;
+
+	/* Array of file descriptors with callbacks */
+	size_t poll_fds_cnt;
+	gp_fd *poll_fds;
 };
 
 int audio_mixer_init(struct audio_mixer *self, const char *device);

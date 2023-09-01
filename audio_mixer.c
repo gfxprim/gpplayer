@@ -6,7 +6,6 @@
  */
 
 #include <core/gp_debug.h>
-#include <widgets/gp_widget_fds.h>
 #include "audio_mixer.h"
 
 static int mixer_poll_callback(gp_fd *self)
@@ -28,22 +27,22 @@ static void register_mixer_fds(struct audio_mixer *self)
 		return;
 	}
 
-	for (i = 0; i < nfds; i++)
-		gp_widget_fds_add(pfds[i].fd, pfds[i].events, mixer_poll_callback, self);
-}
-
-static void unregister_mixer_fds(struct audio_mixer *self)
-{
-	int i, nfds = snd_mixer_poll_descriptors_count(self->mixer);
-	struct pollfd pfds[nfds];
-
-	if (snd_mixer_poll_descriptors(self->mixer, pfds, nfds) < 0) {
-		GP_WARN("Can't get mixer poll descriptors");
+	self->poll_fds = malloc(sizeof(gp_fd) * nfds);
+	if (!self->poll_fds) {
+		GP_WARN("Failed to allocate poll fds");
 		return;
 	}
 
-	for (i = 0; i < nfds; i++)
-		gp_widget_fds_rem(pfds[i].fd);
+	self->poll_fds_cnt = nfds;
+
+	for (i = 0; i < nfds; i++) {
+		self->poll_fds[i] = (gp_fd) {
+			.fd = pfds[i].fd,
+			.event = mixer_poll_callback,
+			.events = pfds[i].events,
+			.priv = self,
+		};
+	}
 }
 
 static snd_mixer_t *mixer_open(const char *alsa_device)
@@ -167,7 +166,6 @@ void audio_mixer_set_master_mute(struct audio_mixer *self, int mute)
 
 void audio_mixer_exit(struct audio_mixer *self)
 {
-	unregister_mixer_fds(self);
-
+	free(self->poll_fds);
 	snd_mixer_close(self->mixer);
 }
