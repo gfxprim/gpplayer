@@ -559,7 +559,7 @@ int set_softvol(gp_widget_event *ev)
 	return 0;
 }
 
-static gp_app_info app_info = {
+gp_app_info app_info = {
 	.name = "gpplayer",
 	.desc = "A simple mp3 player",
 	.version = "1.0",
@@ -580,8 +580,6 @@ int main(int argc, char *argv[])
 	struct audio_mixer mixer = {
 		.master_volume_callback = mixer_volume_callback,
 	};
-
-	gp_app_info_set(&app_info);
 
 	gp_widget *layout = gp_app_layout_load("gpplayer", &uids);
 
@@ -644,7 +642,7 @@ int main(int argc, char *argv[])
 		gp_widgets_timer_ins(&playback_timer);
 	}
 
-	gp_widgets_main_loop(layout, "gpplayer", NULL, 0, NULL);
+	gp_widgets_main_loop(layout, NULL, 0, NULL);
 
 	return 0;
 }
