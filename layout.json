@@ -54,7 +54,8 @@
     "halign": "fill",
     "unit": "seconds",
     "inverse": true,
-    "uid": "playback"
+    "uid": "playback",
+    "on_event": "seek_on_event"
    },
    {
     "cols": 3,

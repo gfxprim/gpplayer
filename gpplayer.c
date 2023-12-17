@@ -182,8 +182,8 @@ int load_track(struct audio_output *out, mpg123_handle *mh, const char *name)
 
 	// duration = length / bitrate
 	uint32_t duration = (double)mpg123_length(mh) / rate + 0.5;
-	gp_widget_pbar_set_max(info_widgets.playback, duration);
-	gp_widget_pbar_set(info_widgets.playback, 0);
+	gp_widget_pbar_max_set(info_widgets.playback, duration);
+	gp_widget_pbar_val_set(info_widgets.playback, 0);
 
 	set_info("Unknown", "Unknown", "Unknown");
 
@@ -234,7 +234,7 @@ static uint32_t playback_callback(gp_timer *self)
 
 	uint32_t pos = (double)mpg123_tell(tracks.mh) / tracks.out->sample_rate + 0.5;
 
-	gp_widget_pbar_set(info_widgets.playback, pos);
+	gp_widget_pbar_val_set(info_widgets.playback, pos);
 
 	/* we are done, play next track */
 	if (ret == MPG123_DONE) {
@@ -436,16 +436,19 @@ int button_playlist_move_down(gp_widget_event *ev)
 	return 0;
 }
 
-/*
-static void seek_callback(struct MW_Widget *self)
+int seek_on_event(gp_widget_event *ev)
 {
-	uint32_t val = MW_WidgetUIntValGet(self);
+	uint64_t val = gp_widget_pbar_val_get(ev->self);
 
-	GP_DEBUG(1, "Seeking to %u min %u sec", val/60, val%60);
+	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+		return 0;
+
+	GP_DEBUG(1, "Seeking to %"PRIu64" min %"PRIu64" sec", val/60, val%60);
 
 	mpg123_seek(tracks.mh, val * tracks.rate, SEEK_SET);
+
+	return 0;
 }
-*/
 
 static int app_handler(gp_widget_event *ev)
 {
