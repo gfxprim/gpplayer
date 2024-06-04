@@ -8,7 +8,7 @@
 #include <core/gp_debug.h>
 #include "audio_mixer.h"
 
-static int mixer_poll_callback(gp_fd *self)
+static enum gp_poll_event_ret mixer_poll_callback(gp_fd *self)
 {
 	struct audio_mixer *mixer = self->priv;
 

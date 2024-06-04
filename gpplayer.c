@@ -297,6 +297,9 @@ int pixmap_event(gp_widget_event *ev)
 		gp_pixmap_free(ev->self->pixmap->pixmap);
 		ev->self->pixmap->pixmap = alloc_backing_pixmap(ev);
 	break;
+	case GP_WIDGET_EVENT_COLOR_SCHEME:
+		gp_fill(ev->self->pixmap->pixmap, ev->ctx->bg_color);
+	break;
 	default:
 	break;
 	}
@@ -599,7 +602,8 @@ int main(int argc, char *argv[])
 	if (info_widgets.speaker_icon)
 		info_widgets.speaker_icon->priv = &mixer;
 
-	gp_widget_event_unmask(info_widgets.cover_art, GP_WIDGET_EVENT_RESIZE);
+	gp_widget_events_unmask(info_widgets.cover_art, GP_WIDGET_EVENT_RESIZE |
+	                                                GP_WIDGET_EVENT_COLOR_SCHEME);
 
 	gp_widget *volume = gp_widget_by_uid(uids, "volume", GP_WIDGET_SLIDER);
 
