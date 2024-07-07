@@ -1,11 +1,10 @@
 //SPDX-License-Identifier: GPL-2.0-or-later
 /*
 
-   Copyright (C) 2007-2022 Cyril Hrubis <metan@ucw.cz>
+   Copyright (C) 2007-2024 Cyril Hrubis <metan@ucw.cz>
 
  */
 
-#include <mpg123.h>
 #include <loaders/gp_loaders.h>
 #include <filters/gp_resize.h>
 #include <widgets/gp_widgets.h>
@@ -13,64 +12,26 @@
 #include "playlist.h"
 #include "audio_mixer.h"
 #include "audio_output.h"
+#include "audio_decoder.h"
+#include "gpplayer_conf.h"
 
 static gp_htable *uids;
 
-static mpg123_handle *init_mpg123(void)
-{
-	mpg123_pars *mp;
-	mpg123_handle *mh;
-	int res;
-
-	if ((res = mpg123_init()) != MPG123_OK) {
-		GP_WARN("Failed to initalize mpg123: %s",
-		           mpg123_plain_strerror(res));
-		goto err0;
-	}
-
-	mp = mpg123_new_pars(&res);
-
-	if (mp == NULL) {
-		GP_WARN("Failed to get mpg123 parameters: %s",
-		           mpg123_plain_strerror(res));
-		goto err1;
-	}
-
-	mh = mpg123_new(NULL, &res);
-
-	if (mh == NULL) {
-		GP_WARN("Failed to create mpg123 handle: %s",
-		           mpg123_plain_strerror(res));
-		goto err1;
-	}
-
-	return mh;
-err1:
-	mpg123_exit();
-err0:
-	return NULL;
-}
-
-static enum audio_format convert_fmt(int encoding)
-{
-	switch (encoding) {
-	case MPG123_ENC_SIGNED_16:
-		return AUDIO_FORMAT_S16;
-	break;
-	case MPG123_ENC_SIGNED_32:
-		return AUDIO_FORMAT_S32;
-	break;
-	default:
-		printf("format %0x\n", encoding);
-		return -1;
-	}
-}
+static const struct audio_decoder_ops *ad_ops;
 
 struct player_tracks {
-	struct audio_output *out;
-	mpg123_handle *mh;
-	long rate;
 	int playing;
+};
+
+static uint32_t playback_callback(gp_timer GP_UNUSED(*self))
+{
+	return audio_decoder_tick(ad_ops);
+}
+
+static gp_timer playback_timer = {
+	.expires = 0,
+	.callback = playback_callback,
+	.id = "Playback",
 };
 
 static struct player_tracks tracks;
@@ -87,7 +48,7 @@ struct info_widgets {
 	gp_widget *decoder_gain;
 } info_widgets;
 
-static void set_info(const char *artist, const char *album, const char *track)
+static void track_info(const char *artist, const char *album, const char *track)
 {
 	GP_DEBUG(1, "Track name '%s' Album name '%s' Artist name '%s'",
 	            track, album, artist);
@@ -102,7 +63,36 @@ static void set_info(const char *artist, const char *album, const char *track)
 		gp_widget_label_set(info_widgets.track, track);
 }
 
-static void show_album_art(unsigned char *data, size_t size)
+static void track_duration(long duration_ms)
+{
+	if (!duration_ms) {
+		printf("Track finished!\n");
+
+		if (!playlist_next()) {
+			tracks.playing = 0;
+			gp_widgets_timer_rem(&playback_timer);
+			audio_decoder_track_pause(ad_ops);
+			return;
+		}
+
+		//TODO: playlist should call this
+		gp_widget_redraw(info_widgets.playlist);
+
+		audio_decoder_track_load(ad_ops, playlist_cur());
+
+		return;
+	}
+
+	gp_widget_pbar_val_set(info_widgets.playback, 0);
+	gp_widget_pbar_max_set(info_widgets.playback, duration_ms/1000);
+}
+
+static void track_pos(long offset_ms)
+{
+	gp_widget_pbar_val_set(info_widgets.playback, offset_ms/1000);
+}
+
+static void track_art(void *data, size_t size)
 {
 	gp_widget *cover_art = info_widgets.cover_art;
 	gp_io *io;
@@ -140,127 +130,10 @@ static void show_album_art(unsigned char *data, size_t size)
 	gp_io_close(io);
 }
 
-int load_track(struct audio_output *out, mpg123_handle *mh, const char *name)
-{
-	int ret;
-
-	if ((ret = mpg123_open(mh, name)) != MPG123_OK) {
-		GP_WARN("Failed to open '%s': %s",
-		        name, mpg123_plain_strerror(ret));
-		return 1;
-	}
-
-	// Setup alsa output
-	long rate;
-	int channels;
-	int encoding;
-
-	if ((ret = mpg123_getformat(mh, &rate, &channels, &encoding)) != MPG123_OK) {
-		GP_WARN("Failed to get format: %s", mpg123_plain_strerror(ret));
-		return 1;
-	}
-
-	tracks.rate = rate;
-
-	if (audio_output_setup(out, channels, convert_fmt(encoding), rate)) {
-		GP_WARN("Failed to set output format");
-		return 1;
-	}
-
-	// Now id3 tags
-	mpg123_id3v1 *v1 = NULL;
-	mpg123_id3v2 *v2 = NULL;
-
-	if ((ret = mpg123_id3(mh, &v1, &v2))) {
-		GP_DEBUG(1, "Failed to fetch id3 tags: %s",
-		            mpg123_plain_strerror(ret));
-	}
-
-	// Do scan to compute length correctly
-//	if (config.scan_duration)
-		mpg123_scan(mh);
-
-	// duration = length / bitrate
-	uint32_t duration = (double)mpg123_length(mh) / rate + 0.5;
-	gp_widget_pbar_max_set(info_widgets.playback, duration);
-	gp_widget_pbar_val_set(info_widgets.playback, 0);
-
-	set_info("Unknown", "Unknown", "Unknown");
-
-	gp_widget_redraw(info_widgets.playlist);
-
-	if (v2 != NULL) {
-		set_info(v2->artist ? v2->artist->p : NULL,
-			 v2->album ? v2->album->p : NULL,
-			 v2->title ? v2->title->p : NULL);
-
-		size_t i;
-
-		for (i = 0; i < v2->pictures; i++) {
-			show_album_art(v2->picture[i].data, v2->picture[i].size);
-		}
-
-		return 0;
-	}
-
-	if (v1 != NULL) {
-		set_info(v1->artist, v1->album, v1->title);
-		return 0;
-	}
-
-	return 0;
-}
-
-static uint32_t playback_callback(gp_timer *self)
-{
-	size_t size;
-	int avail = audio_buf_avail(tracks.out);
-	unsigned char buf[avail];
-	int ret;
-	static unsigned int tick_ms = 1;
-
-	if (avail < 1024) {
-		tick_ms = GP_MIN(100u, tick_ms * 2);
-		GP_DEBUG(1, "Autotune timer tick to %u (avail=%i)", tick_ms, avail);
-		return tick_ms;
-	}
-
-	if (avail > 8196) {
-		tick_ms = GP_MAX(1u, tick_ms/2);
-		GP_DEBUG(1, "Autotune timer tick to %u (avail=%i)", tick_ms, avail);
-	}
-
-	ret = mpg123_read(tracks.mh, buf, sizeof(buf), &size);
-
-	uint32_t pos = (double)mpg123_tell(tracks.mh) / tracks.out->sample_rate + 0.5;
-
-	gp_widget_pbar_val_set(info_widgets.playback, pos);
-
-	/* we are done, play next track */
-	if (ret == MPG123_DONE) {
-		if (playlist_next()) {
-			load_track(tracks.out, tracks.mh, playlist_cur());
-		} else {
-			tracks.playing = 0;
-			audio_output_stop(tracks.out);
-			return GP_TIMER_STOP;
-		}
-	}
-
-	audio_output_write(tracks.out, buf, AUDIO_BUFSIZE_TO_SAMPLES(tracks.out, size));
-	return tick_ms;
-}
-
-static gp_timer playback_timer = {
-	.expires = 0,
-	.callback = playback_callback,
-	.id = "Playback",
-};
-
 static void start_playback_timer(void)
 {
 	tracks.playing = 1;
-	audio_output_start(tracks.out);
+	audio_decoder_track_play(ad_ops);
 	playback_timer.expires = 0;
 	gp_widgets_timer_ins(&playback_timer);
 }
@@ -273,7 +146,10 @@ int button_next_event(gp_widget_event *ev)
 	if (!playlist_next())
 		return 0;
 
-	load_track(tracks.out, tracks.mh, playlist_cur());
+	//TODO: playlist should call this
+	gp_widget_redraw(info_widgets.playlist);
+
+	audio_decoder_track_load(ad_ops, playlist_cur());
 
 	return 0;
 }
@@ -315,7 +191,10 @@ int button_prev_event(gp_widget_event *ev)
 	if (!playlist_prev())
 		return 0;
 
-	load_track(tracks.out, tracks.mh, playlist_cur());
+	//TODO: playlist shoudl call this
+	gp_widget_redraw(info_widgets.playlist);
+
+	audio_decoder_track_load(ad_ops, playlist_cur());
 
 	return 1;
 }
@@ -329,6 +208,7 @@ int button_play_event(gp_widget_event *ev)
 		return 1;
 
 	start_playback_timer();
+	audio_decoder_track_play(ad_ops);
 
 	return 1;
 }
@@ -343,7 +223,7 @@ int button_pause_event(gp_widget_event *ev)
 
 	tracks.playing = 0;
 	gp_widgets_timer_rem(&playback_timer);
-	audio_output_stop(tracks.out);
+	audio_decoder_track_pause(ad_ops);
 
 	return 1;
 }
@@ -359,7 +239,9 @@ int playlist_event(gp_widget_event *ev)
 	if (!playlist_set(ev->self->tbl->selected_row))
 		return 0;
 
-	load_track(tracks.out, tracks.mh, playlist_cur());
+	audio_decoder_track_load(ad_ops, playlist_cur());
+	//TODO: playlist shoudl call this
+	gp_widget_redraw(info_widgets.playlist);
 	if (!tracks.playing)
 		start_playback_timer();
 
@@ -448,7 +330,7 @@ int seek_on_event(gp_widget_event *ev)
 
 	GP_DEBUG(1, "Seeking to %"PRIu64" min %"PRIu64" sec", val/60, val%60);
 
-	mpg123_seek(tracks.mh, val * tracks.rate, SEEK_SET);
+	audio_decoder_track_seek(ad_ops, 1000 * val);
 
 	return 0;
 }
@@ -459,7 +341,7 @@ static int app_handler(gp_widget_event *ev)
 		return 0;
 
 	playlist_exit();
-
+	gpplayer_conf_save();
 	//stop audio output?
 
 	return 1;
@@ -533,29 +415,28 @@ int speaker_icon_ev(gp_widget_event *ev)
 
 int set_softvol(gp_widget_event *ev)
 {
-	unsigned int max = ev->self->slider->max;
-	unsigned int val = ev->self->slider->val;
-
 	if (ev->type == GP_WIDGET_EVENT_NEW) {
-		gp_widget_int_val_set(ev->self, max - max/6);
+		gp_widget_int_set(ev->self, 0, AUDIO_DECODER_SOFTVOL_MAX, gpplayer_conf->softvol);
 		return 0;
 	}
 
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)
 		return 0;
 
-	double vol = 1.00 * val / (max - max/6);
+	unsigned int max = ev->self->slider->max;
+	unsigned int val = gp_widget_int_val_get(ev->self);
 
-	mpg123_volume(tracks.mh, vol);
+	audio_decoder_softvol_set(ad_ops, val);
+	gpplayer_conf_softvol_set(val);
 
 	if (!info_widgets.softvol_icon)
 		return 0;
 
 	int type;
 
-	if (vol < 1.00/3)
+	if (val < 1.00 * max / 3)
 		type = GP_WIDGET_STOCK_SPEAKER_MIN;
-	else if (vol < 2.00/3)
+	else if (val < 2.00 * max / 3)
 		type = GP_WIDGET_STOCK_SPEAKER_MID;
 	else
 		type = GP_WIDGET_STOCK_SPEAKER_MAX;
@@ -565,6 +446,13 @@ int set_softvol(gp_widget_event *ev)
 	return 0;
 }
 
+static struct audio_decoder_callbacks ad_callbacks = {
+	.track_info = track_info,
+		.track_art = track_art,
+	.track_duration = track_duration,
+	.track_pos = track_pos,
+};
+
 gp_app_info app_info = {
 	.name = "gpplayer",
 	.desc = "A simple mp3 player",
@@ -572,20 +460,28 @@ gp_app_info app_info = {
 	.license = "GPL-2.0-or-later",
 	.url = "http://github.com/gfxprim/gpplayer",
 	.authors = (gp_app_info_author []) {
-		{.name = "Cyril Hrubis", .email = "metan@ucw.cz", .years = "2007-2022"},
+		{.name = "Cyril Hrubis", .email = "metan@ucw.cz", .years = "2007-2024"},
 		{}
 	}
 };
 
+static void init_decoder(void)
+{
+	ad_ops = audio_decoder_init(gpplayer_conf->decoder, &ad_callbacks);
+
+	/* Restore softvolume from config */
+	audio_decoder_softvol_set(ad_ops, gpplayer_conf->softvol);
+}
+
 int main(int argc, char *argv[])
 {
-	struct audio_output *out;
-	mpg123_handle *mh;
 	int i;
 
 	struct audio_mixer mixer = {
 		.master_volume_callback = mixer_volume_callback,
 	};
+
+	gpplayer_conf_load();
 
 	gp_widget *layout = gp_app_layout_load("gpplayer", &uids);
 
@@ -615,18 +511,6 @@ int main(int argc, char *argv[])
 	for (i = 0; i < (int)mixer.poll_fds_cnt; i++)
 		gp_widget_poll_add(&mixer.poll_fds[i]);
 
-	out = audio_output_create(AUDIO_DEVICE_DEFAULT, 2, AUDIO_FORMAT_S16, 48000);
-	if (out == NULL) {
-		GP_WARN("Failed to initalize alsa output");
-		return 1;
-	}
-
-	mh = init_mpg123();
-	if (mh == NULL)
-		return 1;
-
-	mpg123_param(mh, MPG123_ADD_FLAGS, MPG123_PICTURE, 1.0);
-
 	gp_widgets_getopt(&argc, &argv);
 
 	if (argc)
@@ -636,16 +520,14 @@ int main(int argc, char *argv[])
 
 	gp_app_on_event_set(app_handler);
 
+	init_decoder();
+
 	for (i = 0; i < argc; i++)
 		playlist_add(argv[i]);
 
-	tracks.out = out;
-	tracks.mh = mh;
-
 	if (playlist_cur()) {
 		tracks.playing = 1;
-		load_track(out, mh, playlist_cur());
-		audio_output_start(out);
+		audio_decoder_track_load(ad_ops, playlist_cur());
 		gp_widgets_timer_ins(&playback_timer);
 	}
 

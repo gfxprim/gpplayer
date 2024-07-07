@@ -1,3 +1,5 @@
 *.o
 gpplayer
 gpplayer.dep
+config.h
+config.mk

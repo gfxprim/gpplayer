@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# Dummy configure to extract parameters and pass the to make
+#
+
+[ -z "$CC" ] && CC=gcc
+
+HEADERS=""
+
+try_compile_c()
+{
+	echo "$1" | $CC $CFLAGS -c -x c -o /dev/null - #> /dev/null 2>&1
+}
+
+check_for_compiler()
+{
+	echo -n "Checking for working compiler ($CC) ... "
+	if try_compile_c "int main(void) { return 0; }"; then
+		echo "OK"
+	else
+		echo "Failed"
+		exit 1;
+	fi
+}
+
+check_for_header()
+{
+	echo -n "Checking for <$1> ... "
+
+	try_compile_c <<EOF
+	#include <$1>
+	int main(void) { return 0; }
+EOF
+
+	if [ $? -eq 0 ]; then
+		echo "Yes"
+		HEADERS="$HEADERS $1"
+	else
+		echo "No"
+	fi
+}
+
+check_for_compiler
+check_for_header "mpv/client.h"
+check_for_header "mpg123.h"
+
+echo -n > config.mk
+echo "#ifndef CONFIG_H" > config.h
+echo "#define CONFIG_H" >> config.h
+echo >> config.h
+
+while true; do
+  case "$1" in
+  --prefix=*) echo "PREFIX=$(echo $1|cut -d= -f2)" >> config.mk; shift;;
+  --libdir=*) echo "LIBDIR=$(echo $1|cut -d= -f2)" >> config.mk; shift;;
+  --mandir=*) echo "MANDIR=$(echo $1|cut -d= -f2)" >> config.mk; shift;;
+  --bindir=*) echo "BINDIR=$(echo $1|cut -d= -f2)" >> config.mk; shift;;
+  --sysconfdir=*) echo "SYSCONFDIR=$(echo $1|cut -d= -f2)" >> config.mk; shift;;
+  --*) shift;;
+  *) break;
+  esac
+done
+
+[ -n "$CC" ] && echo "CC=$CC" >> config.mk
+[ -n "$CFLAGS" ] && echo "CFLAGS=$CFLAGS" >> config.mk
+
+for i in $HEADERS; do
+	HEADER=$(echo $i |tr [a-z]./ [A-Z]__)
+	echo "#define HAVE_$HEADER 1" >> config.h
+	echo "HAVE_$HEADER=yes" >> config.mk
+done
+
+echo >> config.h
+echo "#endif /* CONFIG_H */" >> config.h

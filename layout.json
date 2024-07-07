@@ -5,213 +5,55 @@
   "align": "fill",
   "rfill": "0, 0, 0, 0, 1",
   "widgets": [
-   {
-    "cols": 2,
-    "border": "none",
-    "align": "fill",
+   {"cols": 2, "border": "none", "align": "fill",
     "widgets": [
-     {
-      "type": "pixmap",
-      "w": "3asc 6pad",
-      "h": "3asc 6pad",
-      "uid": "cover_art",
-      "on_event": "pixmap_event"
-     },
-     {
-      "rows": 3,
-      "halign": "fill",
-      "border": "none",
-      "rpad": "4 * 0",
+     {"type": "pixmap", "w": "3asc 6pad", "h": "3asc 6pad", "uid": "cover_art", "on_event": "pixmap_event"},
+     {"rows": 3, "halign": "fill", "border": "none", "rpad": "4 * 0",
       "widgets": [
-       {
-        "type": "label",
-        "width": 18,
-        "text": "Artist",
-        "uid": "artist",
-        "tattr": "bold",
-        "halign": "fill"
-       },
-       {
-        "type": "label",
-        "width": 18,
-        "text": "Album",
-        "uid": "album",
-        "halign": "fill"
-       },
-       {
-        "type": "label",
-        "width": 18,
-        "text": "Track",
-        "uid": "track",
-        "halign": "fill"
-       }
+       {"type": "label", "width": 18, "text": "Artist", "uid": "artist", "tattr": "bold", "halign": "fill"},
+       {"type": "label", "width": 18, "text": "Album", "uid": "album", "halign": "fill"},
+       {"type": "label", "width": 18, "text": "Track", "uid": "track", "halign": "fill"}
       ]
      }
     ]
    },
-   {
-    "type": "pbar",
-    "halign": "fill",
-    "unit": "seconds",
-    "inverse": true,
-    "uid": "playback",
-    "on_event": "seek_on_event"
-   },
-   {
-    "cols": 3,
-    "rows": 3,
-    "align": "fill",
-    "cfill": "0, 0, 1",
-    "cpad": "0, 1, 1, 0",
-    "cpadf": "0, 0, 0, 0",
-    "rpad": "0, 0, 0, 0",
+   {"type": "pbar","halign": "fill", "unit": "seconds", "inverse": true, "uid": "playback", "on_event": "seek_on_event"},
+   {"cols": 3, "rows": 3, "align": "fill", "cfill": "0, 0, 1", "cpad": "0, 1, 1, 0", "cpadf": "0, 0, 0, 0", "rpad": "0, 0, 0, 0",
     "widgets": [
-     {
-      "type": "stock",
-      "stock": "software",
-      "min_size": "1asc 4px",
-      "align": "fill"
-     },
-     {
-      "type": "stock",
-      "stock": "arrow_down",
-      "min_size": "1pad"
-     },
-     {
-      "type": "stock",
-      "stock": "hardware",
-      "min_size": "1asc 4px",
-      "align": "fill"
-     },
-     {
-      "type": "stock",
-      "stock": "speaker_max",
-      "min_size": "1asc 4px",
-      "uid": "softvol_icon",
-      "align": "fill"
-     },
-     {
-     },
-     {
-      "type": "stock",
-      "stock": "speaker_max",
-      "min_size": "1asc 4px",
-      "align": "fill",
-      "uid": "speaker_icon",
-      "on_event": "speaker_icon_ev"
-     },
-     {
-      "type": "slider",
-      "min": 0,
-      "max": 30,
-      "halign": "fill",
-      "on_event": "set_softvol"
-     },
-     {
-     },
-     {
-      "type": "slider",
-      "min": 0,
-      "max": 30,
-      "on_event": "audio_volume_set",
-      "uid": "volume",
-      "halign": "fill"
-     }
+     {"type": "stock", "stock": "software", "min_size": "1asc 4px", "align": "fill"},
+     {"type": "stock", "stock": "arrow_down", "min_size": "1pad"},
+     {"type": "stock", "stock": "hardware", "min_size": "1asc 4px", "align": "fill"},
+     {"type": "stock", "stock": "speaker_max", "min_size": "1asc 4px", "uid": "softvol_icon", "align": "fill"},
+     {},
+     {"type": "stock", "stock": "speaker_max", "min_size": "1asc 4px", "align": "fill", "uid": "speaker_icon", "on_event": "speaker_icon_ev"},
+     {"type": "slider", "min": 0, "max": 30, "halign": "fill", "on_event": "set_softvol"},
+     {},
+     {"type": "slider", "min": 0, "max": 30, "on_event": "audio_volume_set", "uid": "volume", "halign": "fill"}
     ]
    },
-   {
-    "cols": 4,
-    "border": "none",
-    "halign": "fill",
-    "uniform": true,
+   {"type": "hbox", "border": "none", "halign": "fill", "uniform": true,
     "widgets": [
-     {
-      "type": "button",
-      "label": "Prev",
-      "btype": "first",
-      "halign": "fill",
-      "on_event": "button_prev_event"
-     },
-     {
-      "type": "button",
-      "btype": "play",
-      "halign": "fill",
-      "text_align": "left",
-      "on_event": "button_play_event"
-     },
-     {
-      "type": "button",
-      "btype": "pause",
-      "halign": "fill",
-      "on_event": "button_pause_event"
-     },
-     {
-      "type": "button",
-      "label": "Next",
-      "btype": "last",
-      "halign": "fill",
-      "on_event": "button_next_event"
-     }
+     {"type": "button", "label": "Prev", "btype": "first", "halign": "fill", "on_event": "button_prev_event"},
+     {"type": "button", "btype": "play", "halign": "fill", "text_align": "left", "on_event": "button_play_event"},
+     {"type": "button", "btype": "pause", "halign": "fill", "on_event": "button_pause_event"},
+     {"type": "button", "label": "Next", "btype": "last", "halign": "fill", "on_event": "button_next_event"}
     ]
    },
-   {
-    "rows": 2,
-    "border": "none",
-    "rfill": "1, 0",
-    "align": "fill",
+   {"rows": 2, "border": "none", "rfill": "1, 0", "align": "fill",
     "widgets": [
-     {
-      "align": "fill",
-      "type": "table",
-      "min_rows": 5,
-      "col_ops": "playlist_ops",
-      "on_event": "playlist_event",
-      "uid": "playlist",
+     {"align": "fill", "type": "table", "min_rows": 5, "col_ops": "playlist_ops", "on_event": "playlist_event", "uid": "playlist",
       "header": [
-       {
-        "label": "Playlist",
-        "min_size": 20,
-        "id": "name",
-        "fill": 1
-       }
+       {"label": "Playlist", "min_size": 20, "id": "name", "fill": 1}
       ]
      },
-     {
-      "cols": 5,
-      "border": "none",
-      "halign": "fill",
-      "uniform": true,
+     {"type": "hbox", "border": "none", "halign": "fill", "uniform": true,
       "widgets": [
-       {
-        "type": "button",
-        "btype": "up",
-        "halign": "fill",
-        "on_event": "button_playlist_move_up"
-       },
-       {
-        "type": "button",
-        "btype": "down",
-        "halign": "fill",
-        "on_event": "button_playlist_move_down"
-       },
-       {
-        "type": "button",
-        "btype": "add",
-        "halign": "fill",
-        "on_event": "button_playlist_add"
-       },
-       {
-        "type": "button",
-        "btype": "rem",
-        "halign": "fill",
-        "on_event": "button_playlist_rem"
-       },
-       {
-        "type": "button",
-        "btype": "clear",
-        "halign": "fill",
-        "on_event": "button_playlist_clear"
-       }
+       {"type": "button", "btype": "up", "halign": "fill", "on_event": "button_playlist_move_up"},
+       {"type": "button", "btype": "down", "halign": "fill", "on_event": "button_playlist_move_down"},
+       {"type": "button", "btype": "add", "halign": "fill", "on_event": "button_playlist_add"},
+       {"type": "button", "btype": "rem", "halign": "fill", "on_event": "button_playlist_rem"},
+       {"type": "button", "btype": "clear", "halign": "fill", "on_event": "button_playlist_clear"},
+       {"type": "button", "btype": "settings", "halign": "fill"}
       ]
      }
     ]

@@ -1,6 +1,11 @@
 Music Player
 ============
 
-A mp3 player written using libmpg123 and gfxprim widgets.
+A music player written using gfxprim widgets.
+
+Supported decoders:
+
+- mpg123
+- libmpv
 
 image::https://raw.githubusercontent.com/gfxprim/gpplayer/master/gpplayer.png["Screenshot"]

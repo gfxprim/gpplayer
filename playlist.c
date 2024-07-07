@@ -296,8 +296,8 @@ void playlist_add(const char *path)
 		if (name_len < 4)
 			continue;
 
-		if (strcmp(ent->d_name + name_len - 4, ".mp3"))
-			continue;
+		//if (strcmp(ent->d_name + name_len - 4, ".mp3"))
+		//	continue;
 
 		add_path(path, ent->d_name);
 	}
