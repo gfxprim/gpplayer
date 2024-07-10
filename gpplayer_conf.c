@@ -9,6 +9,7 @@
 
 #include <utils/gp_json_serdes.h>
 #include <utils/gp_app_cfg.h>
+#include <utils/gp_path.h>
 #include <widgets/gp_app_info.h>
 
 #include "audio_decoder.h"
@@ -21,8 +22,9 @@ static struct gpplayer_conf conf = {
 const struct gpplayer_conf *gpplayer_conf = &conf;
 
 static gp_json_struct conf_desc[] = {
-	GP_JSON_SERDES_STR_CPY(struct gpplayer_conf, decoder, 0, sizeof(conf.decoder), "decoder"),
-	GP_JSON_SERDES_UINT8(struct gpplayer_conf, softvol, 0, 0, AUDIO_DECODER_SOFTVOL_MAX, "softvol"),
+	GP_JSON_SERDES_STR_CPY(struct gpplayer_conf, decoder, 0, sizeof(conf.decoder)),
+	GP_JSON_SERDES_STR_DUP(struct gpplayer_conf, last_dialog_path, 0, SIZE_MAX),
+	GP_JSON_SERDES_UINT8(struct gpplayer_conf, softvol, 0, 0, AUDIO_DECODER_SOFTVOL_MAX),
 	{}
 };
 
@@ -76,5 +78,19 @@ void gpplayer_conf_softvol_set(uint8_t softvol)
 		return;
 
 	conf.softvol = softvol;
+	conf.dirty = 1;
+}
+
+void gpplayer_conf_last_dialog_path_set(const char *path)
+{
+	char *new_path = gp_dirname(path);
+
+	if (!new_path)
+		return;
+
+	free(conf.last_dialog_path);
+
+	conf.last_dialog_path = new_path;
+
 	conf.dirty = 1;
 }

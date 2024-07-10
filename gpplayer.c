@@ -66,8 +66,6 @@ static void track_info(const char *artist, const char *album, const char *track)
 static void track_duration(long duration_ms)
 {
 	if (!duration_ms) {
-		printf("Track finished!\n");
-
 		if (!playlist_next()) {
 			tracks.playing = 0;
 			gp_widgets_timer_rem(&playback_timer);
@@ -281,10 +279,12 @@ int button_playlist_add(gp_widget_event *ev)
 		.flags = GP_DIALOG_OPEN_FILE | GP_DIALOG_OPEN_DIR,
 	};
 
-	gp_dialog *dialog = gp_dialog_file_open_new(NULL, &opts);
+	gp_dialog *dialog = gp_dialog_file_open_new(gpplayer_conf->last_dialog_path, &opts);
 
-	if (gp_dialog_run(dialog) == GP_WIDGET_DIALOG_PATH)
+	if (gp_dialog_run(dialog) == GP_WIDGET_DIALOG_PATH) {
 		playlist_add(gp_dialog_file_path(dialog));
+		gpplayer_conf_last_dialog_path_set(gp_dialog_file_path(dialog));
+	}
 
 	gp_dialog_free(dialog);
 

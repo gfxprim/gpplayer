@@ -18,6 +18,8 @@ struct gpplayer_conf {
 	char decoder[32];
 	/** @brief Saved softvolume. */
 	uint8_t softvol;
+	/** @brief Last dialog file open path. */
+	char *last_dialog_path;
 
 	/** @brief Set if any data was change and needs to be saved. */
 	uint8_t dirty:1;
@@ -48,5 +50,14 @@ void gpplayer_conf_decoder_set(const char *decoder);
  * @param softvol A softvolume.
  */
 void gpplayer_conf_softvol_set(uint8_t softvol);
+
+/**
+ * @brief Sets a last dialog path
+ *
+ * If last component of the path is a filename it's stripped automatically.
+ *
+ * @param A path.
+ */
+void gpplayer_conf_last_dialog_path_set(const char *path);
 
 #endif /* GPPLAYER_CONF_H */
