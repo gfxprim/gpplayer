@@ -1,13 +1,15 @@
 include config.mk
--include $(DEP)
 
 CFLAGS?=-Wall -Wextra -O2 -ggdb
 CFLAGS+=$(shell gfxprim-config --cflags)
 LDLIBS=-lgfxprim $(shell gfxprim-config --libs-widgets --libs-loaders) -lasound
 BIN=gpplayer
-DEP=$(BIN:=.dep)
+CSOURCES=$(wildcard *.c)
+DEP=$(CSOURCES:.c=.dep)
 
 all: $(DEP) $(BIN)
+
+-include $(DEP)
 
 %.dep: %.c
 	$(CC) $(CFLAGS) -M $< -o $@
@@ -27,7 +29,6 @@ endif
 install:
 	install -D $(BIN) -t $(DESTDIR)/usr/bin/
 	install -m 644 -D layout.json $(DESTDIR)/etc/gp_apps/$(BIN)/layout.json
-
 
 clean:
 	rm -f $(BIN) *.dep *.o
