@@ -39,6 +39,9 @@ DESTDIR="$RPM_BUILD_ROOT" make install
 %{_sysconfdir}/gp_apps/
 %{_sysconfdir}/gp_apps/gpplayer/
 %{_sysconfdir}/gp_apps/gpplayer/*
+%{_datadir}/applications/gpplayer.desktop
+%{_datadir}/gpplayer/
+%{_datadir}/gpplayer/gpplayer.png
 
 %changelog
 * Sun Jan 31 2021 Cyril Hrubis <metan@ucw.cz>

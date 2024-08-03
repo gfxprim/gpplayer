@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=gpplayer
+GenericName=Player
+Version=1.0
+Comment=A music player
+Exec=gpplayer
+Icon=/usr/share/gpplayer/gpplayer.png
+Terminal=false
+Type=Application
+Categories=AudioVideo;Player;
