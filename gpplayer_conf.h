@@ -8,6 +8,7 @@
 #ifndef GPPLAYER_CONF_H
 #define GPPLAYER_CONF_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /**
@@ -20,6 +21,11 @@ struct gpplayer_conf {
 	uint8_t softvol;
 	/** @brief Last dialog file open path. */
 	char *last_dialog_path;
+
+	/** @brief Shuffle playlist while playing. */
+	bool playlist_shuffle;
+	/** @brief Repeat the playlist */
+	bool playlist_repeat;
 
 	/** @brief Set if any data was change and needs to be saved. */
 	uint8_t dirty:1;
@@ -59,5 +65,19 @@ void gpplayer_conf_softvol_set(uint8_t softvol);
  * @param A path.
  */
 void gpplayer_conf_last_dialog_path_set(const char *path);
+
+/**
+ * @brief Sets playlist repeat value.
+ *
+ * @val A playlist repeat value.
+ */
+void gpplayer_conf_playlist_repeat_set(bool val);
+
+/**
+ * @brief Sets playlist shuffle value.
+ *
+ * @val A playlist shuffle value.
+ */
+void gpplayer_conf_playlist_shuffle_set(bool val);
 
 #endif /* GPPLAYER_CONF_H */

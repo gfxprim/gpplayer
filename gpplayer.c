@@ -321,6 +321,35 @@ int button_playlist_move_down(gp_widget_event *ev)
 	return 0;
 }
 
+int playlist_repeat(gp_widget_event *ev)
+{
+	switch (ev->type) {
+	case GP_WIDGET_EVENT_NEW:
+		gp_widget_bool_set(ev->self, gpplayer_conf->playlist_repeat);
+	break;
+	case GP_WIDGET_EVENT_WIDGET:
+		gpplayer_conf_playlist_repeat_set(gp_widget_bool_get(ev->self));
+	break;
+	}
+
+	return 0;
+}
+
+int playlist_shuffle(gp_widget_event *ev)
+{
+	switch (ev->type) {
+	case GP_WIDGET_EVENT_NEW:
+		gp_widget_bool_set(ev->self, gpplayer_conf->playlist_shuffle);
+	break;
+	case GP_WIDGET_EVENT_WIDGET:
+		gpplayer_conf_playlist_shuffle_set(gp_widget_bool_get(ev->self));
+		playlist_shuffle_set(gp_widget_bool_get(ev->self));
+	break;
+	}
+
+	return 0;
+}
+
 int seek_on_event(gp_widget_event *ev)
 {
 	uint64_t val = gp_widget_pbar_val_get(ev->self);
@@ -517,6 +546,8 @@ int main(int argc, char *argv[])
 		playlist_init(NULL);
 	else
 		playlist_init("gpapps/gpplayer/playlist.txt");
+
+	playlist_list();
 
 	gp_app_on_event_set(app_handler);
 

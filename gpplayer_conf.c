@@ -24,6 +24,8 @@ const struct gpplayer_conf *gpplayer_conf = &conf;
 static gp_json_struct conf_desc[] = {
 	GP_JSON_SERDES_STR_CPY(struct gpplayer_conf, decoder, 0, sizeof(conf.decoder)),
 	GP_JSON_SERDES_STR_DUP(struct gpplayer_conf, last_dialog_path, 0, SIZE_MAX),
+	GP_JSON_SERDES_BOOL(struct gpplayer_conf, playlist_repeat, 0),
+	GP_JSON_SERDES_BOOL(struct gpplayer_conf, playlist_shuffle, 0),
 	GP_JSON_SERDES_UINT8(struct gpplayer_conf, softvol, 0, 0, AUDIO_DECODER_SOFTVOL_MAX),
 	{}
 };
@@ -92,5 +94,23 @@ void gpplayer_conf_last_dialog_path_set(const char *path)
 
 	conf.last_dialog_path = new_path;
 
+	conf.dirty = 1;
+}
+
+void gpplayer_conf_playlist_repeat_set(bool val)
+{
+	if (conf.playlist_repeat == val)
+		return;
+
+	conf.playlist_repeat = val;
+	conf.dirty = 1;
+}
+
+void gpplayer_conf_playlist_shuffle_set(bool val)
+{
+	if (conf.playlist_shuffle == val)
+		return;
+
+	conf.playlist_shuffle = val;
 	conf.dirty = 1;
 }
