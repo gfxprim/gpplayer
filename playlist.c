@@ -156,8 +156,6 @@ static void add_path(const char *path, const char *fname)
 
 	playlist.files[new_idx].shuffle_idx = playlist.files[rnd_idx].shuffle_idx;
 	playlist.files[rnd_idx].shuffle_idx = new_idx;
-
-	playlist_list();
 }
 
 void playlist_load(const char *path)
@@ -375,8 +373,6 @@ void playlist_rem(size_t off, size_t len)
 	}
 
 	playlist.files = gp_vec_del(playlist.files, off, len);
-
-	playlist_list();
 }
 
 void playlist_clear(void)
@@ -405,9 +401,9 @@ void playlist_list(void)
 void playlist_shuffle_set(bool shuffle)
 {
 	gpplayer_conf_playlist_shuffle_set(shuffle);
-	printf("Playlist shuffle %i\n", shuffle);
 
-	playlist.cur = playlist.files[playlist.cur].shuffle_idx;
+	if (!shuffle && playlist.files)
+		playlist.cur = playlist.files[playlist.cur].shuffle_idx;
 }
 
 void playlist_repeat_set(bool repeat)

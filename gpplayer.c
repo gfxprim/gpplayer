@@ -547,8 +547,6 @@ int main(int argc, char *argv[])
 	else
 		playlist_init("gpapps/gpplayer/playlist.txt");
 
-	playlist_list();
-
 	gp_app_on_event_set(app_handler);
 
 	init_decoder();
