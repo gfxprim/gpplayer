@@ -96,7 +96,7 @@ static void track_art(void *data, size_t size)
 	gp_io *io;
 	gp_pixmap *p;
 
-	if (!cover_art->pixmap->pixmap)
+	if (!gp_widget_pixmap_get(cover_art))
 		return;
 
 	io = gp_io_mem(data, size, NULL);
@@ -119,7 +119,7 @@ static void track_art(void *data, size_t size)
 	gp_coord off_y = (cover_art->h - rh)/2;
 
 	gp_pixmap *resized = gp_filter_resize_alloc(p, rw, rh, GP_INTERP_LINEAR_LF_INT, NULL);
-	gp_blit(resized, off_x, off_y, resized->w, resized->h, cover_art->pixmap->pixmap, 0, 0);
+	gp_blit(resized, off_x, off_y, resized->w, resized->h, gp_widget_pixmap_get(cover_art), 0, 0);
 	gp_pixmap_free(resized);
 
 	gp_widget_redraw(cover_art);
@@ -168,11 +168,11 @@ int pixmap_event(gp_widget_event *ev)
 {
 	switch (ev->type) {
 	case GP_WIDGET_EVENT_RESIZE:
-		gp_pixmap_free(ev->self->pixmap->pixmap);
-		ev->self->pixmap->pixmap = alloc_backing_pixmap(ev);
+		gp_pixmap_free(gp_widget_pixmap_set(ev->self,
+		               alloc_backing_pixmap(ev)));
 	break;
 	case GP_WIDGET_EVENT_COLOR_SCHEME:
-		gp_fill(ev->self->pixmap->pixmap, ev->ctx->bg_color);
+		gp_fill(gp_widget_pixmap_get(ev->self), ev->ctx->bg_color);
 	break;
 	default:
 	break;
@@ -234,7 +234,7 @@ int playlist_event(gp_widget_event *ev)
 	if (ev->sub_type != GP_WIDGET_TABLE_TRIGGER)
 		return 0;
 
-	if (!playlist_set(ev->self->tbl->selected_row))
+	if (!playlist_set(gp_widget_table_sel_get(ev->self)))
 		return 0;
 
 	audio_decoder_track_load(ad_ops, playlist_cur());
@@ -251,10 +251,10 @@ int button_playlist_rem(gp_widget_event *ev)
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)
 		return 0;
 
-	if (!info_widgets.playlist->tbl->row_selected)
+	if (!gp_widget_table_sel_get(info_widgets.playlist))
 		return 0;
 
-	playlist_rem(info_widgets.playlist->tbl->selected_row, 1);
+	playlist_rem(gp_widget_table_sel_get(info_widgets.playlist), 1);
 	gp_widget_table_refresh(info_widgets.playlist);
 	return 0;
 }
@@ -296,11 +296,13 @@ int button_playlist_move_up(gp_widget_event *ev)
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)
 		return 0;
 
-	if (!info_widgets.playlist->tbl->row_selected)
+	if (!gp_widget_table_sel_has(info_widgets.playlist))
 		return 0;
 
-	if (playlist_move_up(info_widgets.playlist->tbl->selected_row))
-		info_widgets.playlist->tbl->selected_row--;
+	//TODO: Move to playlist
+	unsigned int sel = gp_widget_table_sel_get(info_widgets.playlist);
+	if (playlist_move_up(sel))
+		gp_widget_table_sel_set(info_widgets.playlist, sel-1);
 
 	gp_widget_table_refresh(info_widgets.playlist);
 	return 0;
@@ -311,11 +313,16 @@ int button_playlist_move_down(gp_widget_event *ev)
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)
 		return 0;
 
-	if (!info_widgets.playlist->tbl->row_selected)
+	if (!gp_widget_table_sel_has(info_widgets.playlist))
 		return 0;
 
-	if (playlist_move_down(info_widgets.playlist->tbl->selected_row))
-		info_widgets.playlist->tbl->selected_row++;
+	if (!gp_widget_table_sel_has(info_widgets.playlist))
+		return 0;
+
+	//TODO: Move to playlist
+	unsigned int sel = gp_widget_table_sel_get(info_widgets.playlist);
+	if (playlist_move_down(sel))
+		gp_widget_table_sel_set(info_widgets.playlist, sel+1);
 
 	gp_widget_table_refresh(info_widgets.playlist);
 	return 0;
@@ -402,9 +409,9 @@ static void mixer_volume_callback(struct audio_mixer *mixer, long volume, int mu
 	long amax = mixer->master_volume_max - mixer->master_volume_min;
 	gp_widget *self = mixer->priv;
 
-	int vol = (avol * self->i->max + amax/2) / amax;
+	int vol = (avol * gp_widget_int_max_get(self) + amax/2) / amax;
 
-	update_speaker_icon(vol, self->i->max, mute);
+	update_speaker_icon(vol, gp_widget_int_max_get(self), mute);
 
 	gp_widget_int_val_set(self, vol);
 }
@@ -418,7 +425,7 @@ int audio_volume_set(gp_widget_event *ev)
 
 	long amax = mixer->master_volume_max - mixer->master_volume_min;
 	int vol = gp_widget_int_val_get(ev->self);
-	int max = ev->self->i->max;
+	int max = gp_widget_int_max_get(ev->self);
 
 	long avol = (vol * amax + max/2) / max + mixer->master_volume_min;
 
@@ -434,7 +441,7 @@ int speaker_icon_ev(gp_widget_event *ev)
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)
 		return 0;
 
-	if (ev->self->stock->type == GP_WIDGET_STOCK_SPEAKER_MUTE)
+	if (gp_widget_stock_type_get(ev->self) == GP_WIDGET_STOCK_SPEAKER_MUTE)
 		audio_mixer_set_master_mute(mixer, 0);
 	else
 		audio_mixer_set_master_mute(mixer, 1);
@@ -452,8 +459,8 @@ int set_softvol(gp_widget_event *ev)
 	if (ev->type != GP_WIDGET_EVENT_WIDGET)
 		return 0;
 
-	unsigned int max = ev->self->slider->max;
-	unsigned int val = gp_widget_int_val_get(ev->self);
+	int64_t max = gp_widget_int_max_get(ev->self);
+	int64_t val = gp_widget_int_val_get(ev->self);
 
 	audio_decoder_softvol_set(ad_ops, val);
 	gpplayer_conf_softvol_set(val);

@@ -413,17 +413,17 @@ void playlist_repeat_set(bool repeat)
 
 static int playlist_seek_row(gp_widget *self, int op, unsigned int pos)
 {
-	gp_widget_table *table = self->tbl;
+	gp_widget_table_priv *tbl_priv = gp_widget_table_priv_get(self);
 
 	switch (op) {
 	case GP_TABLE_ROW_RESET:
-		table->row_idx = 0;
+		tbl_priv->row_idx = 0;
 	break;
 	case GP_TABLE_ROW_ADVANCE:
-		if (table->row_idx + pos >= gp_vec_len(playlist.files))
+		if (tbl_priv->row_idx + pos >= gp_vec_len(playlist.files))
 			return 0;
 
-		table->row_idx += pos;
+		tbl_priv->row_idx += pos;
 		return 1;
 	break;
 	case GP_TABLE_ROW_MAX:
@@ -436,7 +436,8 @@ static int playlist_seek_row(gp_widget *self, int op, unsigned int pos)
 
 static int playlist_get(gp_widget *self, gp_widget_table_cell *cell, unsigned int col_id)
 {
-	unsigned int row = self->tbl->row_idx;
+	gp_widget_table_priv *tbl_priv = gp_widget_table_priv_get(self);
+	unsigned int row = tbl_priv->row_idx;
 
 	if (col_id)
 		return 0;
