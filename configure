@@ -9,7 +9,7 @@ HEADERS=""
 
 try_compile_c()
 {
-	echo "$1" | $CC $CFLAGS -c -x c -o /dev/null - #> /dev/null 2>&1
+	echo "$1" | $CC $CFLAGS -c -x c -o /dev/null - > /dev/null 2>&1
 }
 
 check_for_compiler()
@@ -27,10 +27,9 @@ check_for_header()
 {
 	echo -n "Checking for <$1> ... "
 
-	try_compile_c <<EOF
+	try_compile_c "
 	#include <$1>
-	int main(void) { return 0; }
-EOF
+	int main(void) { return 0; }"
 
 	if [ $? -eq 0 ]; then
 		echo "Yes"
