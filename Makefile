@@ -1,29 +1,39 @@
-include config.mk
-
 CFLAGS?=-Wall -Wextra -O2 -ggdb
-CFLAGS+=$(shell gfxprim-config --cflags)
-LDLIBS=-lgfxprim $(shell gfxprim-config --libs-widgets --libs-loaders) -lasound
 BIN=gpplayer
-CSOURCES=$(wildcard *.c)
+$(BIN): LDLIBS=-lgfxprim $(shell gfxprim-config --libs-widgets --libs-loaders) -lasound
+CSOURCES=$(filter-out audio_decoder_mpg123.c audio_decoder_mpv.c, $(wildcard *.c))
 DEP=$(CSOURCES:.c=.dep)
+OBJ=$(CSOURCES:.c=.o)
 
-all: $(DEP) $(BIN)
-
--include $(DEP)
+all: $(BIN) $(DEP)
 
 %.dep: %.c
 	$(CC) $(CFLAGS) -M $< -o $@
 
-$(BIN): audio_mixer.o audio_output.o audio_decoder.o gpplayer_conf.o playlist.o
+-include config.mk
 
 ifdef HAVE_MPG123_H
-$(BIN): audio_decoder_mpg123.o
-LDLIBS+=-lmpg123
+DEP+=audio_decoder_mpg123.dep
+OBJ+=audio_decoder_mpg123.o
+$(BIN): LDLIBS+=-lmpg123
 endif
 
 ifdef HAVE_MPV_CLIENT_H
-$(BIN): audio_decoder_mpv.o
-LDLIBS+=-lmpv
+DEP+=audio_decoder_mpv.dep
+OBJ+=audio_decoder_mpv.o
+$(BIN): LDLIBS+=-lmpv
+endif
+
+$(DEP) $(OBJ): CFLAGS+=$(shell gfxprim-config --cflags)
+
+$(BIN): $(OBJ)
+
+ifeq ($(MAKECMDGOALS),all)
+-include $(DEP)
+endif
+
+ifeq ($(MAKECMDGOALS),)
+-include $(DEP)
 endif
 
 install:
@@ -33,6 +43,9 @@ install:
 	install -m 644 $(BIN).desktop -t $(DESTDIR)/usr/share/applications/
 	install -d $(DESTDIR)/usr/share/$(BIN)/
 	install -m 644 $(BIN).png -t $(DESTDIR)/usr/share/$(BIN)/
+
+distclean: clean
+	rm -f config.h config.mk
 
 clean:
 	rm -f $(BIN) *.dep *.o
