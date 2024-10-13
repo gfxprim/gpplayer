@@ -1,0 +1,14 @@
+Source: gpplayer
+Priority: extra
+Maintainer: Cyril Hrubis <metan@ucw.cz>
+Build-Depends: debhelper (>= 9.0), libgfxprim-dev, libmpg123-dev, libmpv-dev, libasound2-dev
+Standards-Version: 4.0.0
+Section: sound
+Homepage: http://gfxprim.ucw.cz/
+
+Package: gpplayer
+Section: sound
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgfxprim1 (= ${binary:Version}), libmpg123 (= ${binary:Version}), libmpv-dev (= ${binary:Version}), libasound2 (= ${binary:Version})
+Description: A music player
+ Simple music player.

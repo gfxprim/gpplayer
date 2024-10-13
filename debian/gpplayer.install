@@ -1,0 +1,4 @@
+usr/bin/gpplayer
+etc/gp_apps/gpplayer/*
+usr/share/applications/gpplayer.desktop
+usr/share/gpplayer/gpplayer.png
