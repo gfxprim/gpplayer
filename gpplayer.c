@@ -48,6 +48,8 @@ struct info_widgets {
 	gp_widget *decoder_gain;
 } info_widgets;
 
+static struct gp_widget *play_pause_btn;
+
 static void track_info(const char *artist, const char *album, const char *track)
 {
 	GP_DEBUG(1, "Track name '%s' Album name '%s' Artist name '%s'",
@@ -63,13 +65,28 @@ static void track_info(const char *artist, const char *album, const char *track)
 		gp_widget_label_set(info_widgets.track, track);
 }
 
+static void player_start(void)
+{
+	tracks.playing = 1;
+	audio_decoder_track_play(ad_ops);
+	playback_timer.expires = 0;
+	gp_widgets_timer_ins(&playback_timer);
+	gp_widget_button_type_set(play_pause_btn, GP_BUTTON_PAUSE);
+}
+
+static void player_stop(void)
+{
+	tracks.playing = 0;
+	gp_widgets_timer_rem(&playback_timer);
+	audio_decoder_track_pause(ad_ops);
+	gp_widget_button_type_set(play_pause_btn, GP_BUTTON_PLAY);
+}
+
 static void track_duration(long duration_ms)
 {
 	if (!duration_ms) {
 		if (!playlist_next()) {
-			tracks.playing = 0;
-			gp_widgets_timer_rem(&playback_timer);
-			audio_decoder_track_pause(ad_ops);
+			player_stop();
 			return;
 		}
 
@@ -126,14 +143,6 @@ static void track_art(void *data, size_t size)
 
 	gp_pixmap_free(p);
 	gp_io_close(io);
-}
-
-static void start_playback_timer(void)
-{
-	tracks.playing = 1;
-	audio_decoder_track_play(ad_ops);
-	playback_timer.expires = 0;
-	gp_widgets_timer_ins(&playback_timer);
 }
 
 int button_next_event(gp_widget_event *ev)
@@ -197,31 +206,24 @@ int button_prev_event(gp_widget_event *ev)
 	return 1;
 }
 
-int button_play_event(gp_widget_event *ev)
+int button_play_pause_event(gp_widget_event *ev)
 {
-	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+	switch (ev->type) {
+	case GP_WIDGET_EVENT_NEW:
+		play_pause_btn = ev->self;
 		return 0;
-
-	if (tracks.playing == 1)
-		return 1;
-
-	start_playback_timer();
-	audio_decoder_track_play(ad_ops);
-
-	return 1;
-}
-
-int button_pause_event(gp_widget_event *ev)
-{
-	if (ev->type != GP_WIDGET_EVENT_WIDGET)
+	case GP_WIDGET_EVENT_WIDGET:
+	break;
+	default:
 		return 0;
+	}
 
-	if (tracks.playing == 0)
-		return 1;
 
-	tracks.playing = 0;
-	gp_widgets_timer_rem(&playback_timer);
-	audio_decoder_track_pause(ad_ops);
+	if (tracks.playing == 1) {
+		player_stop();
+	} else {
+		player_start();
+	}
 
 	return 1;
 }
@@ -241,7 +243,7 @@ int playlist_event(gp_widget_event *ev)
 	//TODO: playlist shoudl call this
 	gp_widget_redraw(info_widgets.playlist);
 	if (!tracks.playing)
-		start_playback_timer();
+		player_start();
 
 	return 0;
 }
@@ -562,9 +564,8 @@ int main(int argc, char *argv[])
 		playlist_add(argv[i]);
 
 	if (playlist_cur()) {
-		tracks.playing = 1;
 		audio_decoder_track_load(ad_ops, playlist_cur());
-		gp_widgets_timer_ins(&playback_timer);
+		player_start();
 	}
 
 	gp_widgets_main_loop(layout, NULL, 0, NULL);
