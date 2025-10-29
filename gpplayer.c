@@ -70,14 +70,14 @@ static void player_start(void)
 	tracks.playing = 1;
 	audio_decoder_track_play(ad_ops);
 	playback_timer.expires = 0;
-	gp_widgets_timer_ins(&playback_timer);
+	gp_app_timer_start(&playback_timer);
 	gp_widget_button_type_set(play_pause_btn, GP_BUTTON_PAUSE);
 }
 
 static void player_stop(void)
 {
 	tracks.playing = 0;
-	gp_widgets_timer_rem(&playback_timer);
+	gp_app_timer_stop(&playback_timer);
 	audio_decoder_track_pause(ad_ops);
 	gp_widget_button_type_set(play_pause_btn, GP_BUTTON_PLAY);
 }
