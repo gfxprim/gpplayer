@@ -547,7 +547,7 @@ int main(int argc, char *argv[])
 	audio_mixer_init(&mixer, AUDIO_DEVICE_DEFAULT);
 
 	for (i = 0; i < (int)mixer.poll_fds_cnt; i++)
-		gp_widget_poll_add(&mixer.poll_fds[i]);
+		gp_app_poll_add(&mixer.poll_fds[i]);
 
 	gp_widgets_getopt(&argc, &argv);
 
